@@ -1,5 +1,6 @@
 const chai = require('chai');
 const should = chai.should();
+const assert = chai.assert;
 const models = require('../models');
 const app = require('../app');
 
@@ -77,15 +78,15 @@ describe('Orders', () => {
 
   describe('GET /orders', () => {
 
-    // it('should return 403 forbidden response if not admin', (done) => {
-    //   chai.request(app)
-    //     .get('/orders')
-    //     .end((err, res) => {
-    //       if (err) console.log(err.stack);
-    //       res.should.have.status(403);
-    //       done();
-    //     });
-    // });
+    it('should return 403 forbidden response if not admin', (done) => {
+      chai.request(app)
+        .get('/orders')
+        .end((err, res) => {
+          if (err) console.log(err.stack);
+          res.should.have.status(403);
+          done();
+        });
+    });
 
     it('should return order data if admin', (done) => {
 
@@ -97,12 +98,14 @@ describe('Orders', () => {
         billing_state: 'main state'
       };
 
+      const password = 'password';
+
       const newUser = {
         id: 1,
         first_name: 'John',
         last_name: 'Doe',
         email: 'jd@fake.com',
-        password: 'password',
+        password: models.User.generateHash(password),
         role: 1,
         accountId: 1
       };
@@ -162,26 +165,50 @@ describe('Orders', () => {
                             .create(newOrderStatus)
                             .then((success) => {
 
+                              const loginForm = {
+                                email: newUser.email,
+                                password
+                              };
+
                               chai.request(app)
-                                .get('/orders')
+                                .post('/users/login')
+                                .send(loginForm)
                                 .end((err, res) => {
-                                  if (err) console.log(err.stack);
+                                  if (err) {
+                                    console.log(err.stack);
+                                    throw err;
+                                  }
+                                  // should get back success res with token
                                   res.should.have.status(200);
-                                  res.body.orders.should.a('array');
-                                  res.body.orders.length.should.eql(1);
-                                  res.body.orders[0].id.should.eql(newOrder.id);
-                                  res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
-                                  res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
-                                  res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
-                                  res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
-                                  res.body.orders[0].po_number.should.eql(newOrder.po_number);
-                                  res.body.orders[0].UserId.should.eql(newOrder.UserId);
+                                  res.body.success.should.be.true;
+                                  assert.typeOf(res.body.token, 'string');
 
-                                  res.body.orders[0].Order_Details.should.be.a('array');
-                                  res.body.orders[0].Order_Statuses.should.be.a('array');
+                                  const token = res.body.token;
+                                  chai.request(app)
+                                    .get(`/orders?token=${token}`)
+                                    .end((err, res) => {
+                                      if (err) {
+                                        console.log(err.stack);
+                                        throw err;
+                                      }
+                                      res.should.have.status(200);
+                                      res.body.orders.should.a('array');
+                                      res.body.orders.length.should.eql(1);
+                                      res.body.orders[0].id.should.eql(newOrder.id);
+                                      res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
+                                      res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
+                                      res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
+                                      res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
+                                      res.body.orders[0].po_number.should.eql(newOrder.po_number);
+                                      res.body.orders[0].UserId.should.eql(newOrder.UserId);
 
-                                  // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
-                                  done();
+                                      res.body.orders[0].Order_Details.should.be.a('array');
+                                      res.body.orders[0].Order_Statuses.should.be.a('array');
+
+                                      // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
+                                      done();
+                                    });
+
                                 });
 
                             })
