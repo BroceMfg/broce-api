@@ -67,11 +67,26 @@ router.post('/login', (req, res) => {
 
       if (!models.User.validPassword(req.body.password, user.dataValues.password))
         return notProvidedFieldErrorResponse(res, null, 'error: wrong password');
-      
-      else 
-        res.json({
-          success: true
+
+      else {
+
+        const userObj = {
+          id: user.dataValues.id,
+          email: req.body.email,
+          role: user.dataValues.role,
+          accountId: user.dataValues.AccountId
+        };
+
+        const token = jwt.sign(userObj, process.env.JWT_SECRET, {
+          expiresIn: 60 * 60 // expires in 1 hour
         });
+
+        res.json({
+          success: true,
+          token
+        });
+
+      }
 
     })
     .catch((err) => {
