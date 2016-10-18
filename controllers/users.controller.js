@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const models = require('../models');
 const jwt = require('jsonwebtoken');
-const notProvidedFieldErrorResponse = require('../public/js/notProvidedFieldErrorResponse');
-const normalizeStringToInteger = require('../public/js/normalizeStringToInteger');
+const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
+const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 
 router.post('/', (req, res) => {
 

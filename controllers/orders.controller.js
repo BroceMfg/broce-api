@@ -1,6 +1,10 @@
 const router = require('express').Router();
 const models = require('../models');
-const jwt = require('jsonwebtoken');
+const jwtAuthMiddleware = require('./helpers/jwtAuthMiddleware');
+
+// middleware that authenticates a token
+// any route below this will need a token to access
+router.use((req, res, next) => jwtAuthMiddleware(req, res, next));
 
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {
