@@ -1,22 +1,17 @@
 const router = require('express').Router();
 const models = require('../models');
 const jwt = require('jsonwebtoken');
+const notProvidedFieldErrorResponse = require('../public/js/notProvidedFieldErrorResponse');
+const normalizeStringToInteger = require('../public/js/normalizeStringToInteger');
 
 router.post('/', (req, res) => {
 
-  const notProvidedErrorResponse = (field) => {
-    return res.status(403).json({
-      success: false,
-      message: `error: no ${field} provided`
-    });
-  }
-
-  if (!req.body.first_name) return notProvidedErrorResponse('first_name');
-  if (!req.body.last_name) return notProvidedErrorResponse('last_name');
-  if (!req.body.email) return notProvidedErrorResponse('email_name');
-  if (!req.body.password) return notProvidedErrorResponse('password');
-  if (!req.body.role) return notProvidedErrorResponse('role');
-  if (!req.body.accountId) return notProvidedErrorResponse('accountId');
+  if (!req.body.first_name) return notProvidedFieldErrorResponse(res, 'first_name');
+  if (!req.body.last_name) return notProvidedFieldErrorResponse(res, 'last_name');
+  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email_name');
+  if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
+  if (!req.body.role) return notProvidedFieldErrorResponse(res, 'role');
+  if (!req.body.accountId) return notProvidedFieldErrorResponse(res, 'accountId');
 
   models.User
     .findOne({
@@ -30,18 +25,13 @@ router.post('/', (req, res) => {
           message: 'error: user already exists with that email'
         });
 
-      const normalizeIntegerString = (x) => {
-        const result = parseInt(x);
-        return (typeof result == 'number') ? result : undefined;
-      }
-
       models.User
         .create({
           first_name: req.body.first_name,
           last_name: req.body.last_name,
           email: req.body.email,
           password: models.User.generateHash(req.body.password),
-          role: normalizeIntegerString(req.body.role),
+          role: normalizeStringToInteger(req.body.role),
           AccountId: req.body.accountId
         })
         .then((success) => {
@@ -58,6 +48,12 @@ router.post('/', (req, res) => {
       throw err;
     });
 
-})
+});
+
+// router.post('/login', (req, res) => {
+
+//   //
+
+// });
 
 module.exports = router;
