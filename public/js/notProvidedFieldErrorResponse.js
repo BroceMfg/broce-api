@@ -1,7 +1,7 @@
-const notProvidedFieldErrorResponse = (res, field) => {
+const notProvidedFieldErrorResponse = (res, field, message) => {
   return res.status(403).json({
     success: false,
-    message: `error: no ${field} provided`
+    message: message ? message : `error: no ${field} provided`
   });
 }
 

@@ -8,7 +8,7 @@ router.post('/', (req, res) => {
 
   if (!req.body.first_name) return notProvidedFieldErrorResponse(res, 'first_name');
   if (!req.body.last_name) return notProvidedFieldErrorResponse(res, 'last_name');
-  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email_name');
+  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
   if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
   if (!req.body.role) return notProvidedFieldErrorResponse(res, 'role');
   if (!req.body.accountId) return notProvidedFieldErrorResponse(res, 'accountId');
@@ -50,10 +50,34 @@ router.post('/', (req, res) => {
 
 });
 
-// router.post('/login', (req, res) => {
+router.post('/login', (req, res) => {
 
-//   //
+  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
+  if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
 
-// });
+  models.User
+    .findOne({
+      where: { email: req.body.email }
+    })
+    .then((user) => {
+
+      if (!user)
+        return notProvidedFieldErrorResponse(res, null, 
+          'error: a user with that email does not exist');
+
+      if (!models.User.validPassword(req.body.password, user.dataValues.password))
+        return notProvidedFieldErrorResponse(res, null, 'error: wrong password');
+      
+      else 
+        res.json({
+          success: true
+        });
+
+    })
+    .catch((err) => {
+      throw err;
+    });
+
+});
 
 module.exports = router;
