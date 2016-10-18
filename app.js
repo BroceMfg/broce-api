@@ -42,40 +42,22 @@ app.use(function(req, res, next){
   });
 });
 
-// 500 error handler (middleware)
-app.use(function(err, req, res, next){
-  console.error(err.stack);
-  res.status(500).json({
-    error: 500,
-    message: (process.env != 'production') ? err.message : undefined
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({
+      message: err.message,
+      error: err
+    });
   });
-});
-
-// // catch 404 and forward to error handler
-// app.use((req, res, next) => {
-//   var err = new Error('Not Found');
-//   err.status = 404;
-//   next(err);
-// });
-
-// // development error handler
-// // will print stacktrace
-// if (app.get('env') === 'development') {
-//   app.use((err, req, res, next) => {
-//     res.status(err.status || 500);
-//     res.json({
-//       message: err.message,
-//       error: err
-//     });
-//   });
-// }
+}
 // production error handler
 // no stacktraces leaked to user
 app.use((err, req, res, next) => {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
+  res.status(err.status || 500).json({
+    error: err.status || 500,
+    message: (process.env != 'production') ? err.message : 'unkown'
   });
 });
 
