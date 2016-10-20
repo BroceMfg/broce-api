@@ -25,6 +25,62 @@ describe('Orders', () => {
 
   describe('GET /orders', () => {
 
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      accountId: 1
+    };
+
+    const newOrder = {
+      id: 1,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newOrderDetail = {
+      id: 1,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 1,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newPart = {
+      id: 1,
+      number: 'FX-22-LS-3',
+      description: 'foobar',
+      cost: 19.99,
+      image_url: 'image url'
+    };
+
+    const newOrderStatus = {
+      id: 1,
+      current: true,
+      StatusTypeId: 1,
+      OrderId: 1
+    };
+
     it('should return 403 forbidden response if not admin', (done) => {
       chai.request(app)
         .get('/orders')
@@ -41,62 +97,6 @@ describe('Orders', () => {
     });
 
     it('should return order data if admin', (done) => {
-
-      const newAccount = {
-        id: 1,
-        account_name: 'CAT',
-        billing_address: '1 Main Street',
-        billing_city: 'main city',
-        billing_state: 'main state'
-      };
-
-      const password = 'password';
-
-      const newUser = {
-        id: 1,
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'jd@fake.com',
-        password: models.User.generateHash(password),
-        role: 1,
-        accountId: 1
-      };
-
-      const newOrder = {
-        id: 1,
-        shipping_address: 'an address',
-        shipping_city: 'a city',
-        shipping_state: 'a state',
-        shipping_zip: 11111,
-        po_number: '1234',
-        UserId: 1
-      };
-
-      const newOrderDetail = {
-        id: 1,
-        machine_serial_num: 77,
-        quantity: 1,
-        price: 19.99,
-        OrderId: 1,
-        ShippingOptionId: 1,
-        ShippingDetailId: 1,
-        part_id: 1
-      };
-
-      const newPart = {
-        id: 1,
-        number: 'FX-22-LS-3',
-        description: 'foobar',
-        cost: 19.99,
-        image_url: 'image url'
-      };
-
-      const newOrderStatus = {
-        id: 1,
-        current: true,
-        StatusTypeId: 1,
-        OrderId: 1
-      };
 
       const modelsToCreate = [{
         model: models.Account,
@@ -176,7 +176,25 @@ describe('Orders', () => {
 
   describe('POST /orders + form', () => {
 
-    
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      accountId: 1
+    };
 
     const newOrder = {
       shipping_address: 'test_address',
@@ -187,23 +205,40 @@ describe('Orders', () => {
       UserId: 1
     };
 
-    // it('should return 403 forbidden response if not authenticated user', (done) => {
-    //   chai.request(app)
-    //     .post('/orders')
-    //     .send(newOrder)
-    //     .end((err, res) => {
+    it('should return 403 forbidden response if not authenticated user', (done) => {
 
-    //       console.log(res.body);
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newUser
+      }];
 
-    //       err.should.exist;
-    //       res.should.have.status(403);
-    //       res.body.success.should.be.false;
-    //       assert.typeOf(res.body.message, 'string');
-    //       res.body.message.should.contain('error');
+      const cb = () => {
 
-    //       done();
-    //     })
-    // });
+        chai.request(app)
+          .post('/orders')
+          .send(newOrder)
+          .end((err, res) => {
+
+            console.log(`err = ${err}`);
+            console.log(`res = ${JSON.stringify(res, null, 2)}`);
+
+            err.should.exist;
+            res.should.have.status(403);
+            res.body.success.should.be.false;
+            assert.typeOf(res.body.message, 'string');
+            res.body.message.toLowerCase().should.contain('no token provided');
+
+            done();
+          })
+
+      }
+
+      createModels(modelsToCreate, cb);
+      
+    });
 
   });
 

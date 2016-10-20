@@ -77,7 +77,9 @@ router.post('/login', (req, res) => {
           accountId: user.dataValues.AccountId
         };
 
-        const token = jwt.sign(userObj, process.env.JWT_SECRET, {
+        const secret = userObj.role === 1 ? process.env.JWT_SECRET_ADMIN : process.env.JWT_SECRET_CLIENT;
+
+        const token = jwt.sign(userObj, secret, {
           expiresIn: 60 * 60 // expires in 1 hour
         });
 

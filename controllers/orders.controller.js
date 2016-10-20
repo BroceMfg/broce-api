@@ -3,6 +3,11 @@ const models = require('../models');
 const jwtAuthMiddleware = require('./helpers/jwtAuthMiddleware');
 const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
 
+// middleware that authenticates a token
+// any route below this will need a client (or higher) token to access
+// the last param is 0 to specify the client role
+router.use((req, res, next) => jwtAuthMiddleware(req, res, next, 0));
+
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
 
@@ -46,8 +51,9 @@ router.post('/', (req, res) => {
 });
 
 // middleware that authenticates a token
-// any route below this will need a token to access
-router.use((req, res, next) => jwtAuthMiddleware(req, res, next));
+// any route below this will need an admin token to access
+// the last param is 1 to specify the admin role
+router.use((req, res, next) => jwtAuthMiddleware(req, res, next, 1));
 
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {

@@ -1,14 +1,17 @@
 const jwt = require('jsonwebtoken');
 
-const jwtAuthMiddleware = (req, res, next) => {
+// takes in req, res, next from Express, also takes in the user's role (number)
+const jwtAuthMiddleware = (req, res, next, role) => {
   // check header or url param or post params for token
   const token = req.body.token || req.query.token || req.headers['x-access-token'];
 
   // decode token
   if (token) {
 
+    const secret = role === 1 ? process.env.JWT_SECRET_ADMIN : process.env.JWT_SECRET_CLIENT;
+
     // verifies secret and checks exp
-    jwt.verify(token, process.env.JWT_SECRET, function(err, decoded) {
+    jwt.verify(token, secret, function(err, decoded) {
       if (err) {
         console.error(err);
         return res.json({
