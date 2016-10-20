@@ -1,6 +1,49 @@
 const router = require('express').Router();
 const models = require('../models');
 const jwtAuthMiddleware = require('./helpers/jwtAuthMiddleware');
+const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
+
+// POST /orders + form (basic auth)
+router.post('/', (req, res) => {
+
+  // check to make sure all required form fields exist
+  if (!req.body.shipping_address) return notProvidedFieldErrorResponse(res, 'shipping_address');
+  if (!req.body.shipping_city) return notProvidedFieldErrorResponse(res, 'shipping_city');
+  if (!req.body.shipping_state) return notProvidedFieldErrorResponse(res, 'shipping_state');
+  if (!req.body.shipping_zip) return notProvidedFieldErrorResponse(res, 'shipping_zip');
+  if (!req.body.po_number) return notProvidedFieldErrorResponse(res, 'po_number');
+
+  // get current user's id
+  // make sure it's a valid userId
+  // TODO: actually get the logged in user's id
+  const userId = 1;
+
+  const newOrder = {
+    shipping_address: req.body.shipping_address,
+    shipping_city: req.body.shipping_city,
+    shipping_state: req.body.shipping_state,
+    shipping_zip:req.body.shipping_zip,
+    po_number: req.body.po_number,
+    UserId: userId
+  };
+
+  models.Order
+    .create(newOrder)
+    .then((success) => {
+      return res.json({
+        success: true
+      });
+    })
+    .catch((err) => {
+      console.log(err.stack);
+      res.status(500).json({
+        success: false,
+        message: process.env.NODE_ENV != 'production' ? err.message : undefined
+      });
+      throw err;
+    });
+
+});
 
 // middleware that authenticates a token
 // any route below this will need a token to access

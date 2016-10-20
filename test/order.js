@@ -82,8 +82,13 @@ describe('Orders', () => {
       chai.request(app)
         .get('/orders')
         .end((err, res) => {
-          if (err) console.log(err.stack);
+          
+          err.should.exist;
           res.should.have.status(403);
+          res.body.success.should.be.false;
+          assert.typeOf(res.body.message, 'string');
+          res.body.message.toLowerCase().should.contain('no token provided');
+          
           done();
         });
     });
@@ -245,6 +250,35 @@ describe('Orders', () => {
     });
 
     // TODO: add more tests for GET /orders with dummy data    
+
+  });
+
+  describe('POST /orders + form', () => {
+
+    const newOrder = {
+      shipping_address: 'test_address',
+      shipping_city: 'test_city',
+      shipping_state: 'test_state',
+      shipping_zip: 'test_zip',
+      po_number: 'test_po_number',
+      UserId: 1
+    };
+
+    // it('should return 403 forbidden response if not authenticated user', (done) => {
+    //   chai.request(app)
+    //     .post('/oders')
+    //     .send(newOrder)
+    //     .end((err, res) => {
+
+    //       err.should.exist;
+    //       res.should.have.status(403);
+    //       res.body.success.should.be.false;
+    //       assert.typeOf(res.body.message, 'string');
+    //       res.body.message.should.contain('error');
+
+    //       done();
+    //     })
+    // });
 
   });
 
