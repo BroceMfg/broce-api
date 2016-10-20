@@ -165,104 +165,8 @@ describe('Orders', () => {
 
           });
       }
-      
-      createModels(modelsToCreate, done, null, cb)
 
-      // models.Account
-      //   .create(newAccount)
-      //   .then((success) => {
-      //     models.User
-      //       .create(newUser)
-      //       .then((success) => {
-      //         models.Order
-      //           .create(newOrder)
-      //           .then((success) => {
-      //             models.Part
-      //               .create(newPart)
-      //               .then((success) => {
-      //                 models.Order_Detail
-      //                   .create(newOrderDetail)
-      //                   .then((success) => {
-      //                     models.Order_Status
-      //                       .create(newOrderStatus)
-      //                       .then((success) => {
-
-      //                         const loginForm = {
-      //                           email: newUser.email,
-      //                           password
-      //                         };
-
-      //                         chai.request(app)
-      //                           .post('/users/login')
-      //                           .send(loginForm)
-      //                           .end((err, res) => {
-      //                             if (err) {
-      //                               console.log(err.stack);
-      //                               throw err;
-      //                             }
-      //                             // should get back success res with token
-      //                             res.should.have.status(200);
-      //                             res.body.success.should.be.true;
-      //                             assert.typeOf(res.body.token, 'string');
-
-      //                             const token = res.body.token;
-      //                             chai.request(app)
-      //                               .get(`/orders?token=${token}`)
-      //                               .end((err, res) => {
-      //                                 if (err) {
-      //                                   console.log(err.stack);
-      //                                   throw err;
-      //                                 }
-      //                                 res.should.have.status(200);
-      //                                 res.body.orders.should.a('array');
-      //                                 res.body.orders.length.should.eql(1);
-      //                                 res.body.orders[0].id.should.eql(newOrder.id);
-      //                                 res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
-      //                                 res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
-      //                                 res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
-      //                                 res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
-      //                                 res.body.orders[0].po_number.should.eql(newOrder.po_number);
-      //                                 res.body.orders[0].UserId.should.eql(newOrder.UserId);
-
-      //                                 res.body.orders[0].Order_Details.should.be.a('array');
-      //                                 res.body.orders[0].Order_Statuses.should.be.a('array');
-
-      //                                 // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
-      //                                 done();
-      //                               });
-
-      //                           });
-
-      //                       })
-      //                       .catch((err) => {
-      //                         console.log(err.stack);
-      //                         throw err;
-      //                       })
-      //                   })
-      //                   .catch((err) => {
-      //                     console.log(err.stack);
-      //                     throw err;
-      //                   })
-      //               })
-      //               .catch((err) => {
-      //                 console.log(err.stack);
-      //                 throw err;
-      //               })
-      //           })
-      //           .catch((err) => {
-      //             console.log(err.stack);
-      //             throw err;
-      //           });
-      //       })
-      //       .catch((err) => {
-      //         console.log(err.stack);
-      //         throw err;
-      //       });
-      //   })
-      //   .catch((err) => {
-      //     console.log(err.stack);
-      //     throw err;
-      //   });
+      createModels(modelsToCreate, done)
 
     });
 
@@ -272,20 +176,24 @@ describe('Orders', () => {
 
   describe('POST /orders + form', () => {
 
+    
+
     const newOrder = {
       shipping_address: 'test_address',
       shipping_city: 'test_city',
       shipping_state: 'test_state',
-      shipping_zip: 'test_zip',
+      shipping_zip: 11111,
       po_number: 'test_po_number',
       UserId: 1
     };
 
     // it('should return 403 forbidden response if not authenticated user', (done) => {
     //   chai.request(app)
-    //     .post('/oders')
+    //     .post('/orders')
     //     .send(newOrder)
     //     .end((err, res) => {
+
+    //       console.log(res.body);
 
     //       err.should.exist;
     //       res.should.have.status(403);
