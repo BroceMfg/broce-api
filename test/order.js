@@ -3,77 +3,24 @@ const should = chai.should();
 const assert = chai.assert;
 const models = require('../models');
 const app = require('../app');
+const deleteModels = require('./helper').deleteModels;
+const createModels = require('./helper').createModels;
 
 describe('Orders', () => {
 
   beforeEach((done) => {
-    models.Order_Status
-      .findAll({})
-      .then((items) => {
-        items.forEach((item) => {
-          item.destroy();
-        });
-        models.Order_Detail
-          .findAll({})
-          .then((items) => {
-            items.forEach((item) => {
-              item.destroy();
-            });
-            models.Part
-              .findAll({})
-              .then((items) => {
-                items.forEach((item) => {
-                  item.destroy();
-                });
-                models.Order
-                  .findAll({})
-                  .then((items) => {
-                    items.forEach((item) => {
-                      item.destroy();
-                    });
-                    models.User
-                      .findAll({})
-                      .then((items) => {
-                        items.forEach((item) => {
-                          item.destroy();
-                        });
-                        models.Account
-                          .findAll({})
-                          .then((items) => {
-                            items.forEach((item) => {
-                              item.destroy();
-                            });
-                            done();
-                          })
-                          .catch((err) => {
-                            console.log(err.stack);
-                            throw err;
-                          })
-                      })
-                      .catch((err) => {
-                        console.log(err.stack);
-                        throw err;
-                      })
-                  })
-                  .catch((err) => {
-                    console.log(err.stack);
-                    throw err;
-                  })
-              })
-              .catch((err) => {
-                console.log(err.stack);
-                throw err;
-              })
-          })
-          .catch((err) => {
-            console.log(err.stack);
-            throw err;
-          });
-        })
-        .catch((err) => {
-          console.log(err.stack);
-          throw err;
-        });
+
+    const testModels = [
+      models.Order_Status,
+      models.Order_Detail,
+      models.Part,
+      models.Order,
+      models.User,
+      models.Account
+    ];
+
+    deleteModels(testModels, done);
+
   });
 
   describe('GET /orders', () => {
@@ -151,101 +98,171 @@ describe('Orders', () => {
         OrderId: 1
       };
 
-      models.Account
-        .create(newAccount)
-        .then((success) => {
-          models.User
-            .create(newUser)
-            .then((success) => {
-              models.Order
-                .create(newOrder)
-                .then((success) => {
-                  models.Part
-                    .create(newPart)
-                    .then((success) => {
-                      models.Order_Detail
-                        .create(newOrderDetail)
-                        .then((success) => {
-                          models.Order_Status
-                            .create(newOrderStatus)
-                            .then((success) => {
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
 
-                              const loginForm = {
-                                email: newUser.email,
-                                password
-                              };
+      const cb = () => {
+        const loginForm = {
+          email: newUser.email,
+          password
+        };
 
-                              chai.request(app)
-                                .post('/users/login')
-                                .send(loginForm)
-                                .end((err, res) => {
-                                  if (err) {
-                                    console.log(err.stack);
-                                    throw err;
-                                  }
-                                  // should get back success res with token
-                                  res.should.have.status(200);
-                                  res.body.success.should.be.true;
-                                  assert.typeOf(res.body.token, 'string');
-
-                                  const token = res.body.token;
-                                  chai.request(app)
-                                    .get(`/orders?token=${token}`)
-                                    .end((err, res) => {
-                                      if (err) {
-                                        console.log(err.stack);
-                                        throw err;
-                                      }
-                                      res.should.have.status(200);
-                                      res.body.orders.should.a('array');
-                                      res.body.orders.length.should.eql(1);
-                                      res.body.orders[0].id.should.eql(newOrder.id);
-                                      res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
-                                      res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
-                                      res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
-                                      res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
-                                      res.body.orders[0].po_number.should.eql(newOrder.po_number);
-                                      res.body.orders[0].UserId.should.eql(newOrder.UserId);
-
-                                      res.body.orders[0].Order_Details.should.be.a('array');
-                                      res.body.orders[0].Order_Statuses.should.be.a('array');
-
-                                      // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
-                                      done();
-                                    });
-
-                                });
-
-                            })
-                            .catch((err) => {
-                              console.log(err.stack);
-                              throw err;
-                            })
-                        })
-                        .catch((err) => {
-                          console.log(err.stack);
-                          throw err;
-                        })
-                    })
-                    .catch((err) => {
-                      console.log(err.stack);
-                      throw err;
-                    })
-                })
-                .catch((err) => {
-                  console.log(err.stack);
-                  throw err;
-                });
-            })
-            .catch((err) => {
+        chai.request(app)
+          .post('/users/login')
+          .send(loginForm)
+          .end((err, res) => {
+            if (err) {
               console.log(err.stack);
               throw err;
-            });
-        })
-        .catch((err) => {
-          console.log(err.stack);
-          throw err;
-        });
+            }
+            // should get back success res with token
+            res.should.have.status(200);
+            res.body.success.should.be.true;
+            assert.typeOf(res.body.token, 'string');
+
+            const token = res.body.token;
+            chai.request(app)
+              .get(`/orders?token=${token}`)
+              .end((err, res) => {
+                if (err) {
+                  console.log(err.stack);
+                  throw err;
+                }
+                res.should.have.status(200);
+                res.body.orders.should.a('array');
+                res.body.orders.length.should.eql(1);
+                res.body.orders[0].id.should.eql(newOrder.id);
+                res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
+                res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
+                res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
+                res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
+                res.body.orders[0].po_number.should.eql(newOrder.po_number);
+                res.body.orders[0].UserId.should.eql(newOrder.UserId);
+
+                res.body.orders[0].Order_Details.should.be.a('array');
+                res.body.orders[0].Order_Statuses.should.be.a('array');
+
+                // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
+                done();
+              });
+
+          });
+      }
+      
+      createModels(modelsToCreate, done, null, cb)
+
+      // models.Account
+      //   .create(newAccount)
+      //   .then((success) => {
+      //     models.User
+      //       .create(newUser)
+      //       .then((success) => {
+      //         models.Order
+      //           .create(newOrder)
+      //           .then((success) => {
+      //             models.Part
+      //               .create(newPart)
+      //               .then((success) => {
+      //                 models.Order_Detail
+      //                   .create(newOrderDetail)
+      //                   .then((success) => {
+      //                     models.Order_Status
+      //                       .create(newOrderStatus)
+      //                       .then((success) => {
+
+      //                         const loginForm = {
+      //                           email: newUser.email,
+      //                           password
+      //                         };
+
+      //                         chai.request(app)
+      //                           .post('/users/login')
+      //                           .send(loginForm)
+      //                           .end((err, res) => {
+      //                             if (err) {
+      //                               console.log(err.stack);
+      //                               throw err;
+      //                             }
+      //                             // should get back success res with token
+      //                             res.should.have.status(200);
+      //                             res.body.success.should.be.true;
+      //                             assert.typeOf(res.body.token, 'string');
+
+      //                             const token = res.body.token;
+      //                             chai.request(app)
+      //                               .get(`/orders?token=${token}`)
+      //                               .end((err, res) => {
+      //                                 if (err) {
+      //                                   console.log(err.stack);
+      //                                   throw err;
+      //                                 }
+      //                                 res.should.have.status(200);
+      //                                 res.body.orders.should.a('array');
+      //                                 res.body.orders.length.should.eql(1);
+      //                                 res.body.orders[0].id.should.eql(newOrder.id);
+      //                                 res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
+      //                                 res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
+      //                                 res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
+      //                                 res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
+      //                                 res.body.orders[0].po_number.should.eql(newOrder.po_number);
+      //                                 res.body.orders[0].UserId.should.eql(newOrder.UserId);
+
+      //                                 res.body.orders[0].Order_Details.should.be.a('array');
+      //                                 res.body.orders[0].Order_Statuses.should.be.a('array');
+
+      //                                 // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
+      //                                 done();
+      //                               });
+
+      //                           });
+
+      //                       })
+      //                       .catch((err) => {
+      //                         console.log(err.stack);
+      //                         throw err;
+      //                       })
+      //                   })
+      //                   .catch((err) => {
+      //                     console.log(err.stack);
+      //                     throw err;
+      //                   })
+      //               })
+      //               .catch((err) => {
+      //                 console.log(err.stack);
+      //                 throw err;
+      //               })
+      //           })
+      //           .catch((err) => {
+      //             console.log(err.stack);
+      //             throw err;
+      //           });
+      //       })
+      //       .catch((err) => {
+      //         console.log(err.stack);
+      //         throw err;
+      //       });
+      //   })
+      //   .catch((err) => {
+      //     console.log(err.stack);
+      //     throw err;
+      //   });
 
     });
 

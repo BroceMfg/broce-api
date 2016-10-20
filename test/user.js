@@ -3,33 +3,18 @@ const should = chai.should();
 const assert = chai.assert;
 const models = require('../models');
 const app = require('../app');
+const deleteModels = require('./helper').deleteModels;
 
 describe('Orders', () => {
-
   beforeEach((done) => {
-    models.User
-      .findAll({})
-      .then((items) => {
-        items.forEach((item) => {
-          item.destroy();
-        });
-        models.Account
-          .findAll({})
-          .then((items) => {
-            items.forEach((item) => {
-              item.destroy();
-            });
-            done();
-          })
-          .catch((err) => {
-            console.log(err.stack);
-            throw err;
-          });
-      })
-      .catch((err) => {
-        console.log(err.stack);
-        throw err;
-      });
+
+    const testModels = [
+      models.User,
+      models.Account
+    ];
+
+    deleteModels(testModels, done);
+
   });
     
   describe('POST /users + form', () => {
