@@ -45,6 +45,7 @@ describe('Orders', () => {
     };
 
     const newAdminUser = {
+      id: 99,
       first_name: 'John',
       last_name: 'Doe',
       email: 'jd@fake.com',
@@ -60,7 +61,7 @@ describe('Orders', () => {
       shipping_state: 'a state',
       shipping_zip: 11111,
       po_number: '1234',
-      UserId: 1
+      UserId: 99
     };
 
     const newOrderDetail = {
@@ -156,79 +157,79 @@ describe('Orders', () => {
 
     });
 
-    // it('should return order data if admin', (done) => {
+    it('should return order data if admin', (done) => {
 
-    //   const modelsToCreate = [{
-    //     model: models.Account,
-    //     obj: newAccount
-    //   }, {
-    //     model: models.User,
-    //     obj: newUser
-    //   }, {
-    //     model: models.Order,
-    //     obj: newOrder
-    //   }, {
-    //     model: models.Part,
-    //     obj: newPart
-    //   }, {
-    //     model: models.Order_Detail,
-    //     obj: newOrderDetail
-    //   }, {
-    //     model: models.Order_Status,
-    //     obj: newOrderStatus
-    //   }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
 
-    //   const cb = () => {
-    //     const loginForm = {
-    //       email: newUser.email,
-    //       password
-    //     };
+      const cb = () => {
+        const loginForm = {
+          email: newUser.email,
+          password
+        };
 
-    //     chai.request(app)
-    //       .post('/users/login')
-    //       .send(loginForm)
-    //       .end((err, res) => {
-    //         if (err) {
-    //           console.log(err.stack);
-    //           throw err;
-    //         }
-    //         // should get back success res with token
-    //         res.should.have.status(200);
-    //         res.body.success.should.be.true;
-    //         assert.typeOf(res.body.token, 'string');
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
 
-    //         const token = res.body.token;
-    //         chai.request(app)
-    //           .get(`/orders?token=${token}`)
-    //           .end((err, res) => {
-    //             if (err) {
-    //               console.log(err.stack);
-    //               throw err;
-    //             }
-    //             res.should.have.status(200);
-    //             res.body.orders.should.a('array');
-    //             res.body.orders.length.should.eql(1);
-    //             res.body.orders[0].id.should.eql(newOrder.id);
-    //             res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
-    //             res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
-    //             res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
-    //             res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
-    //             res.body.orders[0].po_number.should.eql(newOrder.po_number);
-    //             res.body.orders[0].UserId.should.eql(newOrder.UserId);
+            // should get res with admin cookie back here
 
-    //             res.body.orders[0].Order_Details.should.be.a('array');
-    //             res.body.orders[0].Order_Statuses.should.be.a('array');
+            return agent
+              .get(`/orders?token=${token}`)
+              .then((res) => {
 
-    //             // console.log(`res.body = ${JSON.stringify(res.body, null, 2)}`);
-    //             done();
-    //           });
+                res.should.have.status(200);
+                res.body.orders.should.a('array');
+                res.body.orders.length.should.eql(1);
+                res.body.orders[0].id.should.eql(newOrder.id);
+                res.body.orders[0].shipping_address.should.eql(newOrder.shipping_address);
+                res.body.orders[0].shipping_city.should.eql(newOrder.shipping_city);
+                res.body.orders[0].shipping_state.should.eql(newOrder.shipping_state);
+                res.body.orders[0].shipping_zip.should.eql(newOrder.shipping_zip);
+                res.body.orders[0].po_number.should.eql(newOrder.po_number);
+                res.body.orders[0].UserId.should.eql(newOrder.UserId);
 
-    //       });
-    //   }
+                res.body.orders[0].Order_Details.should.be.a('array');
+                res.body.orders[0].Order_Statuses.should.be.a('array');
 
-    //   createModels(modelsToCreate, done)
+                done();
 
-    // });
+              })
+              .catch((err) => {
+                console.log(err.stack);
+                throw err;
+              });
+
+          })
+          .catch((err) => {
+            console.log(err.stack);
+            throw err;
+          })
+
+      }
+
+      createModels(modelsToCreate, done)
+
+    });
 
     // TODO: add more tests for GET /orders with dummy data    
 
