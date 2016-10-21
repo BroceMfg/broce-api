@@ -308,6 +308,54 @@ describe('Orders', () => {
       
     });
 
+    it('should return success if authenticated client user', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newClientUser.email,
+          password
+        };
+
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            // shoudl send res with admin cookie
+            return agent
+              .post('/orders')
+              .send(newOrder)
+              .then((res) => {
+
+                res.should.have.status(200);
+                done();
+              })
+              .catch((err) => {
+                console.log(`err = ${JSON.stringify(err, null, 2)}`); 
+                console.log(err.stack);
+                throw err;
+              })
+
+          })
+          .catch((err) => {
+            console.log(err.stack);
+            throw err;
+          });
+      }
+
+      createModels(modelsToCreate, cb);
+      
+    });
+
     it('should return success if authenticated admin user', (done) => {
 
       const modelsToCreate = [{
