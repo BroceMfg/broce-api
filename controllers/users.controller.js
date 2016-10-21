@@ -79,6 +79,9 @@ router.post('/login', (req, res) => {
         };
 
         req.session.user = userObj;
+        if (process.env.NODE_ENV === 'test') {
+          res.cookie('userRole', JSON.stringify(userObj.role));
+        }
         res.json({
           success: true
         });

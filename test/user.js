@@ -317,7 +317,7 @@ describe('Orders', () => {
           password
         };
 
-        chai.request(app)
+        chai.request.agent(app)
           .post('/users/login')
           .send(loginForm)
           .end((err, res) => {

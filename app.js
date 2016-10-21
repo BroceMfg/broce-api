@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const redis = require('connect-redis');
+const cookieParser = require('cookie-parser');
 const favicon = require('serve-favicon');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
@@ -39,6 +40,8 @@ app.use((req, res, next) => {
   }
   next(); // otherwise continue 
 });
+
+if (process.env.NODE_ENV === 'test') app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // middleware configuration
 app.use(favicon(__dirname + '/public/favicon.ico'));

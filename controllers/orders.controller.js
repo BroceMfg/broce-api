@@ -58,6 +58,8 @@ router.use((req, res, next) => setPermissionsForFollowingRoutes(req, res, next, 
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {
 
+  console.log(`req.cookies.user = ${process.env.NODE_ENV === 'test' ? req.cookies.user : undefined}`);
+
   console.log(`req.session.user = ${JSON.stringify(req.session.user, null, 2)}`);
 
   // let system know how to relate Order_Detail and Order
