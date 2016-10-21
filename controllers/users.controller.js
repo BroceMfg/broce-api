@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const models = require('../models');
-const jwt = require('jsonwebtoken');
 const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 
+// POST /users - anyone can access
 router.post('/', (req, res) => {
 
   if (!req.body.first_name) return notProvidedFieldErrorResponse(res, 'first_name');
@@ -50,6 +50,7 @@ router.post('/', (req, res) => {
 
 });
 
+// POST /users/login - anyone can access
 router.post('/login', (req, res) => {
 
   if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
@@ -77,15 +78,9 @@ router.post('/login', (req, res) => {
           accountId: user.dataValues.AccountId
         };
 
-        const secret = userObj.role === 1 ? process.env.JWT_SECRET_ADMIN : process.env.JWT_SECRET_CLIENT;
-
-        const token = jwt.sign(userObj, secret, {
-          expiresIn: 60 * 60 // expires in 1 hour
-        });
-
+        req.session.user = userObj;
         res.json({
-          success: true,
-          token
+          success: true
         });
 
       }

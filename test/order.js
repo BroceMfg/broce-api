@@ -240,6 +240,41 @@ describe('Orders', () => {
       
     });
 
+    // it('should return success if authenticated user', (done) => {
+
+    //   const modelsToCreate = [{
+    //     model: models.Account,
+    //     obj: newAccount
+    //   }, {
+    //     model: models.User,
+    //     obj: newUser
+    //   }];
+
+    //   const cb = () => {
+
+    //     chai.request(app)
+    //       .post('/orders')
+    //       .send(newOrder)
+    //       .end((err, res) => {
+
+    //         console.log(`err = ${err}`);
+    //         console.log(`res = ${JSON.stringify(res, null, 2)}`);
+
+    //         err.should.exist;
+    //         res.should.have.status(403);
+    //         res.body.success.should.be.false;
+    //         assert.typeOf(res.body.message, 'string');
+    //         res.body.message.toLowerCase().should.contain('no token provided');
+
+    //         done();
+    //       })
+
+    //   }
+
+    //   createModels(modelsToCreate, cb);
+      
+    // });
+
   });
 
 });

@@ -1,12 +1,12 @@
 const router = require('express').Router();
 const models = require('../models');
-const jwtAuthMiddleware = require('./helpers/jwtAuthMiddleware');
+const setPermissionsForFollowingRoutes = require('./helpers/setPermissionsForFollowingRoutes');
 const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
 
-// middleware that authenticates a token
-// any route below this will need a client (or higher) token to access
+// middleware that restricts the following routes to the role provided
+// any route below this will need a client role to access 
 // the last param is 0 to specify the client role
-router.use((req, res, next) => jwtAuthMiddleware(req, res, next, 0));
+router.use((req, res, next) => setPermissionsForFollowingRoutes(req, res, next, 0));
 
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
@@ -50,13 +50,15 @@ router.post('/', (req, res) => {
 
 });
 
-// middleware that authenticates a token
-// any route below this will need an admin token to access
+// middleware that restricts the following routes to the role provided
+// any route below this will need an admin role to access 
 // the last param is 1 to specify the admin role
-router.use((req, res, next) => jwtAuthMiddleware(req, res, next, 1));
+router.use((req, res, next) => setPermissionsForFollowingRoutes(req, res, next, 1));
 
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {
+
+  console.log(`req.session.user = ${JSON.stringify(req.session.user, null, 2)}`);
 
   // let system know how to relate Order_Detail and Order
   models.Order_Detail.belongsTo(models.Order, { foreignKey: 'OrderId' });
