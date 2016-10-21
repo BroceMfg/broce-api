@@ -235,107 +235,104 @@ describe('Orders', () => {
 
   });
 
-  // describe('POST /orders + form', () => {
+  describe('POST /orders + form', () => {
 
-  //   const newAccount = {
-  //     id: 1,
-  //     account_name: 'CAT',
-  //     billing_address: '1 Main Street',
-  //     billing_city: 'main city',
-  //     billing_state: 'main state'
-  //   };
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
 
-  //   const password = 'password';
+    const password = 'password';
 
-  //   const newUser = {
-  //     id: 1,
-  //     first_name: 'John',
-  //     last_name: 'Doe',
-  //     email: 'jd@fake.com',
-  //     password: models.User.generateHash(password),
-  //     role: 1,
-  //     accountId: 1
-  //   };
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      accountId: 1
+    };
 
-  //   const newOrder = {
-  //     shipping_address: 'test_address',
-  //     shipping_city: 'test_city',
-  //     shipping_state: 'test_state',
-  //     shipping_zip: 11111,
-  //     po_number: 'test_po_number',
-  //     UserId: 1
-  //   };
+    const newOrder = {
+      shipping_address: 'test_address',
+      shipping_city: 'test_city',
+      shipping_state: 'test_state',
+      shipping_zip: 11111,
+      po_number: 'test_po_number',
+      UserId: 1
+    };
 
-  //   it('should return 403 forbidden response if not authenticated user', (done) => {
+    it('should return 403 forbidden response if not authenticated user', (done) => {
 
-  //     const modelsToCreate = [{
-  //       model: models.Account,
-  //       obj: newAccount
-  //     }, {
-  //       model: models.User,
-  //       obj: newUser
-  //     }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }];
 
-  //     const cb = () => {
+      const cb = () => {
 
-  //       chai.request(app)
-  //         .post('/orders')
-  //         .send(newOrder)
-  //         .end((err, res) => {
+        const agent = chai.request.agent(app);
+        chai.request(app)
+          .post('/orders')
+          .send(newOrder)
+          .end((err, res) => {
 
-  //           console.log(`err = ${err}`);
-  //           console.log(`res = ${JSON.stringify(res, null, 2)}`);
+            err.should.exist;
+            res.should.have.status(403);
+            res.body.success.should.be.false;
+            assert.typeOf(res.body.message, 'string');
+            res.body.message.toLowerCase().should.contain('no user data found');
+            
+            done();
+          });
+      }
 
-  //           err.should.exist;
-  //           res.should.have.status(403);
-  //           res.body.success.should.be.false;
-  //           assert.typeOf(res.body.message, 'string');
-  //           res.body.message.toLowerCase().should.contain('no token provided');
-
-  //           done();
-  //         })
-
-  //     }
-
-  //     createModels(modelsToCreate, cb);
+      createModels(modelsToCreate, cb);
       
-  //   });
+    });
 
-  //   // it('should return success if authenticated user', (done) => {
+    // it('should return success if authenticated user', (done) => {
 
-  //   //   const modelsToCreate = [{
-  //   //     model: models.Account,
-  //   //     obj: newAccount
-  //   //   }, {
-  //   //     model: models.User,
-  //   //     obj: newUser
-  //   //   }];
+    //   const modelsToCreate = [{
+    //     model: models.Account,
+    //     obj: newAccount
+    //   }, {
+    //     model: models.User,
+    //     obj: newUser
+    //   }];
 
-  //   //   const cb = () => {
+    //   const cb = () => {
 
-  //   //     chai.request(app)
-  //   //       .post('/orders')
-  //   //       .send(newOrder)
-  //   //       .end((err, res) => {
+    //     chai.request(app)
+    //       .post('/orders')
+    //       .send(newOrder)
+    //       .end((err, res) => {
 
-  //   //         console.log(`err = ${err}`);
-  //   //         console.log(`res = ${JSON.stringify(res, null, 2)}`);
+    //         console.log(`err = ${err}`);
+    //         console.log(`res = ${JSON.stringify(res, null, 2)}`);
 
-  //   //         err.should.exist;
-  //   //         res.should.have.status(403);
-  //   //         res.body.success.should.be.false;
-  //   //         assert.typeOf(res.body.message, 'string');
-  //   //         res.body.message.toLowerCase().should.contain('no token provided');
+    //         err.should.exist;
+    //         res.should.have.status(403);
+    //         res.body.success.should.be.false;
+    //         assert.typeOf(res.body.message, 'string');
+    //         res.body.message.toLowerCase().should.contain('no token provided');
 
-  //   //         done();
-  //   //       })
+    //         done();
+    //       })
 
-  //   //   }
+    //   }
 
-  //   //   createModels(modelsToCreate, cb);
+    //   createModels(modelsToCreate, cb);
       
-  //   // });
+    // });
 
-  // });
+  });
 
 });
