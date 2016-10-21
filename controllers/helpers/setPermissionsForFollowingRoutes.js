@@ -1,15 +1,10 @@
+const normalizeNumberString = require('./normalizeNumberString');
+
 // takes in req, res, next from Express
 // role should be a number (1 is admin, 0 is client)
 const setPermissionsForFollowingRoutes = (req, res, next, role) => {
 
   if (process.env.NODE_ENV === 'test') {
-    const normalizeNumberString = (x) => {
-      if (parseInt(x) > -1) return parseInt(x);
-      else {
-        // received weird string-number of foratm '"1"'
-        return parseInt(x.replace(new RegExp('"', 'g'), ''));
-      } 
-    }
 
     // because of the way the chai request lib works, we need to use reg cookies for auth in the test env
     if (!req.cookies || !req.cookies.userRole) {
