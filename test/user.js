@@ -289,7 +289,7 @@ describe('Orders', () => {
       accountId: 1
     };
 
-    it('should return success and token if login successfully', (done) => {
+    it('should return success if login successfully', (done) => {
 
       const password = 'password';
 
@@ -328,7 +328,6 @@ describe('Orders', () => {
 
             res.should.have.status(200);
             res.body.success.should.be.true;
-            assert.typeOf(res.body.token, 'string');
 
             done();
 
