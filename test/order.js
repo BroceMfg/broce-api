@@ -181,7 +181,7 @@ describe('Orders', () => {
 
       const cb = () => {
         const loginForm = {
-          email: newUser.email,
+          email: newAdminUser.email,
           password
         };
 
@@ -247,6 +247,16 @@ describe('Orders', () => {
 
     const password = 'password';
 
+    const newClientUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      accountId: 1
+    };
+
     const newAdminUser = {
       id: 1,
       first_name: 'John',
@@ -298,40 +308,53 @@ describe('Orders', () => {
       
     });
 
-    // it('should return success if authenticated user', (done) => {
+    it('should return success if authenticated admin user', (done) => {
 
-    //   const modelsToCreate = [{
-    //     model: models.Account,
-    //     obj: newAccount
-    //   }, {
-    //     model: models.User,
-    //     obj: newUser
-    //   }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }];
 
-    //   const cb = () => {
+      const cb = () => {
 
-    //     chai.request(app)
-    //       .post('/orders')
-    //       .send(newOrder)
-    //       .end((err, res) => {
+        const loginForm = {
+          email: newAdminUser.email,
+          password
+        };
 
-    //         console.log(`err = ${err}`);
-    //         console.log(`res = ${JSON.stringify(res, null, 2)}`);
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            // shoudl send res with admin cookie
+            return agent
+              .post('/orders')
+              .send(newOrder)
+              .then((res) => {
 
-    //         err.should.exist;
-    //         res.should.have.status(403);
-    //         res.body.success.should.be.false;
-    //         assert.typeOf(res.body.message, 'string');
-    //         res.body.message.toLowerCase().should.contain('no token provided');
+                res.should.have.status(200);
+                done();
+              })
+              .catch((err) => {
+                console.log(`err = ${JSON.stringify(err, null, 2)}`); 
+                console.log(err.stack);
+                throw err;
+              })
 
-    //         done();
-    //       })
+          })
+          .catch((err) => {
+            console.log(err.stack);
+            throw err;
+          });
+      }
 
-    //   }
-
-    //   createModels(modelsToCreate, cb);
+      createModels(modelsToCreate, cb);
       
-    // });
+    });
 
   });
 

@@ -2,55 +2,62 @@
 // role should be a number (1 is admin, 0 is client)
 const setPermissionsForFollowingRoutes = (req, res, next, role) => {
 
-  // because of the way the chai request lib works, we need to use reg cookies for auth in the test env
-  if (process.env.NODE_ENV === 'test' && (!req.cookies || !req.cookies.userRole)) {
-    return res.status(403).json({
-      success: false,
-      message: 'error: no user data found'
-    });
-  }
+  if (process.env.NODE_ENV === 'test') {
+    const normalizeNumberString = (x) => {
+      if (parseInt(x) > -1) return parseInt(x);
+      else {
+        // received weird string-number of foratm '"1"'
+        return parseInt(x.replace(new RegExp('"', 'g'), ''));
+      } 
+    }
 
-  else if (process.env.NODE_ENV === 'test' && req.cookies && parseInt(req.cookies.userRole) !== role) {
-    return res.status(403).json({
-      success: false,
-      message: 'error: permission denied'
-    });
-  }
+    // because of the way the chai request lib works, we need to use reg cookies for auth in the test env
+    if (!req.cookies || !req.cookies.userRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'error: no user data found'
+      });
+    }
 
-  else if (process.env.NODE_ENV === 'test' && req.cookies && parseInt(req.cookies.userRole) >= role)
-    next();
-  // END OF TEST SCENARIOS
+    else if (req.cookies && (normalizeNumberString(req.cookies.userRole) >= role)) next();
 
-
-  // in normal environments such as dev, prod, etc. we'll user redis sessions for security purposes
-  if (!req.session) {
-    // for some reason we didn't give them a session cookie
-    return res.status(500).json({
-      success: false,
-      message: 'error: internal server error'
-    });
-  }
-
-  if (!req.session.user) {
-    // no user session cookie
-    return res.status(403).json({
-      success: false,
-      message: 'error: no user data found'
-    });
-  }
-
-  if (req.session.user.role >= role) {
-
-    req.session.user.roleVerification = role;
-    next();
+    else if (req.cookies && (normalizeNumberString(req.cookies.userRole) != role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'error: permission denied'
+      });
+    }
   } else {
-    // user is trying to access a route they don't have permission to
-    return res.status(403).json({
-      success: false,
-      message: 'error: permission denied'
-    });
+
+    // in normal environments such as dev, prod, etc. we'll user redis sessions for security purposes
+    if (!req.session) {
+      // for some reason we didn't give them a session cookie
+      return res.status(500).json({
+        success: false,
+        message: 'error: internal server error'
+      });
+    }
+
+    if (!req.session.user) {
+      // no user session cookie
+      return res.status(403).json({
+        success: false,
+        message: 'error: no user data found'
+      });
+    }
+
+    if (req.session.user.role >= role) {
+
+      req.session.user.roleVerification = role;
+      next();
+    } else {
+      // user is trying to access a route they don't have permission to
+      return res.status(403).json({
+        success: false,
+        message: 'error: permission denied'
+      });
+    }
   }
-  
 }
 
 module.exports = setPermissionsForFollowingRoutes;
