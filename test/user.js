@@ -532,6 +532,7 @@ describe('Users', () => {
           password: password
         };
 
+        // chai agent is required for accessing cookies
         const agent = chai.request.agent(app);
         agent
           .post('/users/login')
@@ -539,6 +540,7 @@ describe('Users', () => {
           .then((res) => {
             
             res.should.have.status(200);
+            // parse userRole cookie value from chai response object
             const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
                 .replace(new RegExp('%22','g'), '');
 
@@ -551,6 +553,61 @@ describe('Users', () => {
                 res.body.success.should.be.false;
                 assert.typeOf(res.body.message, 'string');
                 res.body.message.toLowerCase().should.contain('permission denied');
+
+                done();
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return success if admin', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newAdminUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            chai.request(app)
+              .get(`/users/?userRole=${userRole}`)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  throw err;
+                }
+
+                res.should.have.status(200);
+                
+                // TODO check for presence of data
 
                 done();
               });
