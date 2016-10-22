@@ -330,7 +330,7 @@ describe('Orders', () => {
           .post('/users/login')
           .send(loginForm)
           .then((res) => {
-            // shoudl send res with admin cookie
+            // should send res with admin cookie
             return agent
               .post('/orders')
               .send(newOrder)

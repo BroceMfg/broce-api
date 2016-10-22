@@ -6,22 +6,28 @@ const setPermissionsForFollowingRoutes = (req, res, next, role) => {
 
   if (process.env.NODE_ENV === 'test') {
 
+    let userRole = (req.cookies && req.cookies.userRole) ? 
+      normalizeNumberString(req.cookies.userRole) : undefined;
+
+    // TODO add support for taking in userRole value as a url query
+
     // because of the way the chai request lib works, we need to use reg cookies for auth in the test env
-    if (!req.cookies || !req.cookies.userRole) {
+    if (userRole === undefined) {
       return res.status(403).json({
         success: false,
         message: 'error: no user data found'
       });
     }
 
-    else if (req.cookies && (normalizeNumberString(req.cookies.userRole) >= role)) next();
+    else if (userRole >= role) next();
 
-    else if (req.cookies && (normalizeNumberString(req.cookies.userRole) != role)) {
+    else if (userRole != role) {
       return res.status(403).json({
         success: false,
         message: 'error: permission denied'
       });
     }
+
   } else {
 
     // in normal environments such as dev, prod, etc. we'll user redis sessions for security purposes
