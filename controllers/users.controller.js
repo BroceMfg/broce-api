@@ -2,7 +2,7 @@ const router = require('express').Router();
 const models = require('../models');
 const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
-const setPermissionsForFollowingRoutes = require('./helpers/setPermissionsForFollowingRoutes');
+const checkPermissions = require('./helpers/checkPermissions');
 
 // POST /users - anyone can access
 router.post('/', (req, res) => {
@@ -96,17 +96,29 @@ router.post('/login', (req, res) => {
 
 });
 
-// middleware that restricts the following routes to the role provided
-// any route below this will need an admin role to access 
-// the last param is 1 to specify the admin role
-router.use((req, res, next) => setPermissionsForFollowingRoutes(req, res, next, 1));
-
 // GET /users - ADMIN ONLY
 router.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'GET /users - ADMIN ONLY'
-  });
+
+  const cb = () => {
+    models.User
+      .findAll({})
+      .then((users) => {
+          res.json({
+            users
+          });
+        })
+        .catch((err) => {
+          console.error(err.stack);
+          res.status(500).json({
+            success: false,
+            error: process.env.NODE_ENV !== 'production' 
+              ? err.message : 'internal server error'
+          });
+        });
+  }
+
+  checkPermissions(req, res, 1, null, cb);
+
 });
 
 module.exports = router;

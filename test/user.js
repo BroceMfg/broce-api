@@ -1,10 +1,13 @@
 const chai = require('chai');
 const should = chai.should();
 const assert = chai.assert;
+const expect = chai.expect;
 const models = require('../models');
 const app = require('../app');
 const deleteModels = require('./helper').deleteModels;
 const createModels = require('./helper').createModels;
+const regularExpressions = require('../controllers/helpers/regularExpressions');
+const normalizeStringToInteger = require('../controllers/helpers/normalizeStringToInteger');
 
 describe('Users', () => {
   beforeEach((done) => {
@@ -494,7 +497,7 @@ describe('Users', () => {
       email: 'jd@fake.com',
       password: models.User.generateHash(password),
       role: 1,
-      accountId: 1
+      AccountId: 1
     };
 
     it('should return 403 forbidden response if not authenticated user', (done) => {
@@ -606,8 +609,18 @@ describe('Users', () => {
                 }
 
                 res.should.have.status(200);
-                
-                // TODO check for presence of data
+                res.body.users.should.be.a.array;
+                res.body.users.length.should.eql(1);
+                expect(res.body.users[0].id).to.be.a('number');
+                expect(res.body.users[0].first_name).to.be.a('string');
+                expect(res.body.users[0].last_name).to.be.a('string');
+                expect(res.body.users[0].email).to.be.a('string');
+                res.body.users[0].email.should.match(regularExpressions.email);
+                expect(res.body.users[0].password).to.be.a('string');
+                expect(normalizeStringToInteger(res.body.users[0].role)).to.be.a('number');
+                res.body.users[0].createdAt.should.exist;
+                res.body.users[0].updatedAt.should.exist;
+                expect(res.body.users[0].AccountId);
 
                 done();
               });
