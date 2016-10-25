@@ -163,11 +163,9 @@ router.delete('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            console.log('error deleting user');
-            console.log(err.message);
+            console.log(`error deleting user \n ${err.message}`);
             throw err;
           });
-
       })
       .catch((err) => {
         console.log(err.message);
