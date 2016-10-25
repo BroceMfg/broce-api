@@ -3,6 +3,7 @@ const models = require('../models');
 const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const checkPermissions = require('./helpers/checkPermissions');
+const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handleDBFindErrorAndRespondWithAppropriateJSON');
 
 // POST /users - anyone can access
 router.post('/', (req, res) => {
@@ -82,6 +83,7 @@ router.post('/login', (req, res) => {
         req.session.user = userObj;
         if (process.env.NODE_ENV === 'test') {
           res.cookie('userRole', userObj.role);
+          res.cookie('userId', userObj.id);
         }
         res.json({
           success: true
@@ -103,22 +105,42 @@ router.get('/', (req, res) => {
     models.User
       .findAll({})
       .then((users) => {
-          res.json({
-            users
-          });
-        })
-        .catch((err) => {
-          console.error(err.stack);
-          res.status(500).json({
-            success: false,
-            error: process.env.NODE_ENV !== 'production' 
-              ? err.message : 'internal server error'
-          });
+        res.json({
+          users
         });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      });
   }
 
   checkPermissions(req, res, 1, null, cb);
 
 });
+
+router.get('/:id', (req, res) => {
+
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+    models.User
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((user) => {
+        res.json({
+          user
+        })
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      });
+  }
+
+  checkPermissions(req, res, null, id, cb);
+
+})
 
 module.exports = router;
