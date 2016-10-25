@@ -121,6 +121,7 @@ router.post('/', (req, res) => {
 // GET /users/{id} - only the user or admin can access
 router.get('/:id', (req, res) => {
 
+  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -144,8 +145,57 @@ router.get('/:id', (req, res) => {
 
 })
 
+router.put('/:id', (req, res) => {
+
+  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+    models.User
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((user) => {
+
+        const b = req.body;
+
+        let userObj = {
+          first_name: b.first_name || user.first_name,
+          last_name: b.last_name || user.last_name,
+          email: b.email || user.email,
+          password: b.password || user.password
+        };
+
+        models.User
+          .update(userObj, {
+            where: {
+              id: user.id
+            }
+          })
+          .then((success) => {
+            res.json({
+              success: true
+            });
+          })
+          .catch((err) => {
+            handleDBFindErrorAndRespondWithAppropriateJSON(err);
+          });
+
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      })
+  }
+
+  checkPermissions(req, res, null, id, cb);
+
+});
+
 router.delete('/:id', (req, res) => {
 
+  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -163,13 +213,11 @@ router.delete('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            console.log(`error deleting user \n ${err.message}`);
-            throw err;
+            handleDBFindErrorAndRespondWithAppropriateJSON(err);
           });
       })
       .catch((err) => {
-        console.log(err.message);
-        throw err;
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
       });
   }
 

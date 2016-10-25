@@ -929,6 +929,290 @@ describe('Users', () => {
 
   });
 
+  describe('PUT /users/{id}', () => {
+
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      AccountId: 1
+    };
+
+    const newClientUser = {
+      id: 2,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newIrrelevantClientUser = {
+      id: 3,
+      first_name: 'Bob',
+      last_name: 'Builder',
+      email: 'bob@bob.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newPassword = 'foobar';
+
+    const userForm = {
+      first_name: 'David',
+      last_name: 'Smith',
+      password: models.User.generateHash(newPassword)
+    };
+
+    it('should return 403 forbidden response if not authenticated user', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }];
+
+      const cb = () => {
+
+        // trying to update newClientUser as unauthenticated user
+        chai.request(app)
+          .put('/users/2')
+          .send(userForm)
+          .end((err, res) => {
+
+            err.should.exist;
+            res.should.have.status(403);
+
+            done();
+
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    // it('should return 403 forbidden response if authenticated but not appropriate user and not admin',
+    //   (done) => {
+
+    //   const modelsToCreate = [{
+    //     model: models.Account,
+    //     obj: newAccount
+    //   }, {
+    //     model: models.User,
+    //     obj: newAdminUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newClientUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newIrrelevantClientUser
+    //   }];
+
+    //   const cb = () => {
+
+    //     const loginForm = {
+    //       email: newClientUser.email,
+    //       password: password
+    //     };
+
+    //     // chai agent is required for accessing cookies
+    //     const agent = chai.request.agent(app);
+    //     agent
+    //       .post('/users/login')
+    //       .send(loginForm)
+    //       .then((res) => {
+            
+    //         res.should.have.status(200);
+    //         // parse userId cookie value from chai response object
+    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+    //         // parse userRole cookie value from chai response object
+    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+
+    //         // trying to delete newIrrelevantClientUser as newClientUser
+    //         chai.request(app)
+    //           .delete(`/users/3/?userId=${userId}&userRole=${userRole}`)
+    //           .end((err, res) => {
+                
+    //             err.should.exist;
+    //             res.should.have.status(403);
+    //             res.body.success.should.be.false;
+    //             assert.typeOf(res.body.message, 'string');
+    //             res.body.message.toLowerCase().should.contain('permission denied');
+
+    //             done();
+    //           });
+    //       })
+    //       .catch((err) => {
+    //         console.log(err.message);
+    //         err.should.not.exist;
+    //       });
+
+    //   }
+
+    //   createModels(modelsToCreate, cb);
+
+    // });
+
+    // it('should return success if appropriate user',
+    //   (done) => {
+
+    //   const modelsToCreate = [{
+    //     model: models.Account,
+    //     obj: newAccount
+    //   }, {
+    //     model: models.User,
+    //     obj: newAdminUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newClientUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newIrrelevantClientUser
+    //   }];
+
+    //   const cb = () => {
+
+    //     const loginForm = {
+    //       email: newClientUser.email,
+    //       password: password
+    //     };
+
+    //     // chai agent is required for accessing cookies
+    //     const agent = chai.request.agent(app);
+    //     agent
+    //       .post('/users/login')
+    //       .send(loginForm)
+    //       .then((res) => {
+            
+    //         res.should.have.status(200);
+    //         // parse userId cookie value from chai response object
+    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+    //         // parse userRole cookie value from chai response object
+    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+
+    //         // trying to delete newClientUser as newClientUser
+    //         chai.request(app)
+    //           .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
+    //           .end((err, res) => {
+    //             if (err) {
+    //               err.should.not.exist;
+    //               done();
+    //             }
+
+    //             res.should.have.status(200);
+    //             res.body.success.should.be.true;
+
+    //             done();
+    //           });
+    //       })
+    //       .catch((err) => {
+    //         err.should.not.exist;
+    //         throw err;
+    //       });
+
+    //   }
+
+    //   createModels(modelsToCreate, cb);
+
+    // });
+
+    // it('should return success if admin',
+    //   (done) => {
+
+    //   const modelsToCreate = [{
+    //     model: models.Account,
+    //     obj: newAccount
+    //   }, {
+    //     model: models.User,
+    //     obj: newAdminUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newClientUser
+    //   }, {
+    //     model: models.User,
+    //     obj: newIrrelevantClientUser
+    //   }];
+
+    //   const cb = () => {
+
+    //     const loginForm = {
+    //       email: newAdminUser.email,
+    //       password: password
+    //     };
+
+    //     // chai agent is required for accessing cookies
+    //     const agent = chai.request.agent(app);
+    //     agent
+    //       .post('/users/login')
+    //       .send(loginForm)
+    //       .then((res) => {
+            
+    //         res.should.have.status(200);
+    //         // parse userId cookie value from chai response object
+    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+    //         // parse userRole cookie value from chai response object
+    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+    //             .replace(new RegExp('%22','g'), '');
+
+
+    //         // trying to access newClientUser as newAdminUSer
+    //         chai.request(app)
+    //           .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
+    //           .end((err, res) => {
+    //             if (err) {
+    //               err.should.not.exist;
+    //               done();
+    //             }
+
+    //             res.should.have.status(200);
+    //             res.body.success.should.be.true;
+
+    //             done();
+    //           });
+    //       })
+    //       .catch((err) => {
+    //         err.should.not.exist;
+    //         throw err;
+    //       });
+
+    //   }
+
+    //   createModels(modelsToCreate, cb);
+
+    // });
+
+  });
+
   describe('DELETE /users/{id}', () => {
 
     const newAccount = {
