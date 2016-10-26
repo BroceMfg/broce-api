@@ -468,7 +468,7 @@ describe('Users', () => {
 
   });
 
-  describe('GET /users', () => {
+  describe('GET /users - ADMIN ONLY', () => {
 
     const newAccount = {
       id: 1,
@@ -638,7 +638,7 @@ describe('Users', () => {
 
   });
 
-  describe('GET /users/{id}', () => {
+  describe('GET /users/{id} - Owner or Admin Only', () => {
 
     const newAccount = {
       id: 1,
@@ -929,7 +929,7 @@ describe('Users', () => {
 
   });
 
-  describe('PUT /users/{id}', () => {
+  describe('PUT /users/{id} - Owner or Admin Only', () => {
 
     const newAccount = {
       id: 1,
@@ -1255,7 +1255,7 @@ describe('Users', () => {
 
   });
 
-  describe('DELETE /users/{id}', () => {
+  describe('DELETE /users/{id} - Owner or Admin Only', () => {
 
     const newAccount = {
       id: 1,

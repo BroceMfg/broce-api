@@ -122,6 +122,7 @@ router.post('/', (req, res) => {
 
 });
 
+// GET /orders/{id} -- Owner or Admin Only
 router.get('/:id', (req, res) => {
 
   // let system know how to relate Order_Detail and Order
@@ -136,7 +137,8 @@ router.get('/:id', (req, res) => {
   models.Order_Detail.belongsTo(models.Part, { foreignKey: 'part_id' });
   models.Part.belongsTo(models.Order_Detail, { foreignKey: 'id' });
 
-  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = (order) => {
@@ -194,14 +196,14 @@ router.get('/:id', (req, res) => {
 
 });
 
+// PUT /orders/{id} -- Owner or Admin Only
 router.put('/:id', (req, res) => {
 
-  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = (order) => {
-
-    console.log('hello')
 
     const b = req.body;
 
@@ -239,7 +241,6 @@ router.put('/:id', (req, res) => {
       }
     })
     .then((order) => {
-      console.log(order.UserId);
       if (order == undefined || order.UserId == undefined) {
         handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
           'order does not contain a UserId property'));
@@ -252,5 +253,44 @@ router.put('/:id', (req, res) => {
     });
 
 });
+
+// DELETE /orders/{id} -- ADMIN ONLY
+router.delete('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = (order) => {
+    order.destroy({ force: true })
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      });
+  }
+
+  models.Order
+    .findOne({
+      where: {
+        id
+      }
+    })
+    .then((order) => {
+      if (order == undefined || order.UserId == undefined) {
+        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+          'order does not contain a UserId property'));
+      } else {
+        checkPermissions(req, res, 1, null, () => cb(order));
+      }
+    })
+    .catch((err) => {
+      handleDBFindErrorAndRespondWithAppropriateJSON(err);
+    });
+
+})
 
 module.exports = router;

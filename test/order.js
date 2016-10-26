@@ -408,7 +408,7 @@ describe('Orders', () => {
 
   });
 
-  describe('GET /orders/{id}', () => {
+  describe('GET /orders/{id} - Owner or Admin Only', () => {
 
     const newAccount = {
       id: 1,
@@ -767,7 +767,7 @@ describe('Orders', () => {
 
   });
 
-  describe('PUT /orders/{id}', () => {
+  describe('PUT /orders/{id} - Owner or Admin Only', () => {
 
     const newAccount = {
       id: 1,
@@ -1147,6 +1147,358 @@ describe('Orders', () => {
                     err.should.not.exist;
                     throw err;
                   });
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+  });
+
+  describe('DELETE /orders/{id} - ADMIN ONLY', () => {
+
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      AccountId: 1
+    };
+
+    const newClientUser = {
+      id: 2,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newIrrelevantClientUser = {
+      id: 3,
+      first_name: 'Bob',
+      last_name: 'Builder',
+      email: 'bob@bob.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newOrder = {
+      id: 2,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 2
+    };
+
+    const newOrderDetail = {
+      id: 1,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 2,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newPart = {
+      id: 1,
+      number: 'FX-22-LS-3',
+      description: 'foobar',
+      cost: 19.99,
+      image_url: 'image url'
+    };
+
+    const newOrderStatus = {
+      id: 1,
+      current: true,
+      StatusTypeId: 1,
+      OrderId: 2
+    };
+
+    const orderForm = {
+      shipping_address: 'a new address',
+      shipping_city: 'a new city',
+      shipping_state: 'a new state',
+      shipping_zip: 99999,
+      po_number: '666'
+    };
+
+    it('should return 403 forbidden response if not authenticated user', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
+
+      const cb = () => {
+
+        // trying to delete newOrder as unauthenticated user
+        chai.request(app)
+          .delete(`/users/${newOrder.id}`)
+          .end((err, res) => {
+
+            err.should.exist;
+            res.should.have.status(403);
+            res.body.success.should.be.false;
+            assert.typeOf(res.body.message, 'string');
+            res.body.message.should.contain('no user data found');
+
+            done();
+
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return 403 forbidden response if authenticated but not appropriate user and not admin',
+      (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newIrrelevantClientUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to delete newOrder as newIrrelevantUser
+            chai.request(app)
+              .delete(`/orders/${newOrder.id}/?userId=${userId}&userRole=${userRole}`)
+              .end((err, res) => {
+                
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.toLowerCase().should.contain('permission denied');
+
+                done();
+              });
+          })
+          .catch((err) => {
+            console.log(err.message);
+            err.should.not.exist;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return 403 forbidden if appropriate user (only the admin can delete orders)',
+      (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newClientUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to delete newOrder as newClientUser
+            chai.request(app)
+              .delete(`/orders/${newOrder.id}/?userId=${userId}&userRole=${userRole}`)
+              .end((err, res) => {
+
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.toLowerCase().should.contain('permission denied');
+
+                done();
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return success if admin', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.Order,
+        obj: newOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newOrderStatus
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newAdminUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to delete newOrder as newClientUser
+            chai.request(app)
+              .delete(`/orders/${newOrder.id}/?userId=${userId}&userRole=${userRole}`)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  done();
+                }
+
+                res.should.have.status(200);
+                res.body.success.should.be.true;
+                
+                done();
               });
           })
           .catch((err) => {
