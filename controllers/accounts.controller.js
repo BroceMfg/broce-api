@@ -7,9 +7,20 @@ const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handle
 
 router.get('/', (req, res) => {
   
-  res.json({
-    hello: 'world'
-  });
+  const cb = () => {
+    models.Account
+      .findAll({})
+      .then((accounts) => {
+        res.json({
+          accounts
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      });
+  }
+
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
