@@ -161,6 +161,8 @@ router.put('/:id', (req, res) => {
 
         const b = req.body;
 
+        // only allows for updating the first_name, last_name, email, 
+        // and password fields
         let userObj = {
           first_name: b.first_name || user.first_name,
           last_name: b.last_name || user.last_name,

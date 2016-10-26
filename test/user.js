@@ -951,8 +951,10 @@ describe('Users', () => {
       AccountId: 1
     };
 
+    const clientId = 2;
+
     const newClientUser = {
-      id: 2,
+      id: clientId,
       first_name: 'John',
       last_name: 'Doe',
       email: 'john@doe.com',
@@ -976,6 +978,7 @@ describe('Users', () => {
     const userForm = {
       first_name: 'David',
       last_name: 'Smith',
+      email: 'new@email.com',
       password: models.User.generateHash(newPassword)
     };
 
@@ -1016,200 +1019,239 @@ describe('Users', () => {
 
     });
 
-    // it('should return 403 forbidden response if authenticated but not appropriate user and not admin',
-    //   (done) => {
+    it('should return 403 forbidden response if authenticated but not appropriate user and not admin',
+      (done) => {
 
-    //   const modelsToCreate = [{
-    //     model: models.Account,
-    //     obj: newAccount
-    //   }, {
-    //     model: models.User,
-    //     obj: newAdminUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newClientUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newIrrelevantClientUser
-    //   }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }];
 
-    //   const cb = () => {
+      const cb = () => {
 
-    //     const loginForm = {
-    //       email: newClientUser.email,
-    //       password: password
-    //     };
+        const loginForm = {
+          email: newClientUser.email,
+          password: password
+        };
 
-    //     // chai agent is required for accessing cookies
-    //     const agent = chai.request.agent(app);
-    //     agent
-    //       .post('/users/login')
-    //       .send(loginForm)
-    //       .then((res) => {
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
             
-    //         res.should.have.status(200);
-    //         // parse userId cookie value from chai response object
-    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
-    //         // parse userRole cookie value from chai response object
-    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
 
-    //         // trying to delete newIrrelevantClientUser as newClientUser
-    //         chai.request(app)
-    //           .delete(`/users/3/?userId=${userId}&userRole=${userRole}`)
-    //           .end((err, res) => {
+            // trying to update newIrrelevantClientUser as newClientUser
+            chai.request(app)
+              .put(`/users/3/?userId=${userId}&userRole=${userRole}`)
+              .send(userForm)
+              .end((err, res) => {
                 
-    //             err.should.exist;
-    //             res.should.have.status(403);
-    //             res.body.success.should.be.false;
-    //             assert.typeOf(res.body.message, 'string');
-    //             res.body.message.toLowerCase().should.contain('permission denied');
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.toLowerCase().should.contain('permission denied');
 
-    //             done();
-    //           });
-    //       })
-    //       .catch((err) => {
-    //         console.log(err.message);
-    //         err.should.not.exist;
-    //       });
+                done();
+              });
+          })
+          .catch((err) => {
+            console.log(err.message);
+            err.should.not.exist;
+          });
 
-    //   }
+      }
 
-    //   createModels(modelsToCreate, cb);
+      createModels(modelsToCreate, cb);
 
-    // });
+    });
 
-    // it('should return success if appropriate user',
-    //   (done) => {
+    it('should return success if appropriate user',
+      (done) => {
 
-    //   const modelsToCreate = [{
-    //     model: models.Account,
-    //     obj: newAccount
-    //   }, {
-    //     model: models.User,
-    //     obj: newAdminUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newClientUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newIrrelevantClientUser
-    //   }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }];
 
-    //   const cb = () => {
+      const cb = () => {
 
-    //     const loginForm = {
-    //       email: newClientUser.email,
-    //       password: password
-    //     };
+        const loginForm = {
+          email: newClientUser.email,
+          password: password
+        };
 
-    //     // chai agent is required for accessing cookies
-    //     const agent = chai.request.agent(app);
-    //     agent
-    //       .post('/users/login')
-    //       .send(loginForm)
-    //       .then((res) => {
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
             
-    //         res.should.have.status(200);
-    //         // parse userId cookie value from chai response object
-    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
-    //         // parse userRole cookie value from chai response object
-    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
 
-    //         // trying to delete newClientUser as newClientUser
-    //         chai.request(app)
-    //           .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
-    //           .end((err, res) => {
-    //             if (err) {
-    //               err.should.not.exist;
-    //               done();
-    //             }
+            // trying to update newClientUser as newClientUser
+            chai.request(app)
+              .put(`/users/${clientId}/?userId=${userId}&userRole=${userRole}`)
+              .send(userForm)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  done();
+                }
 
-    //             res.should.have.status(200);
-    //             res.body.success.should.be.true;
+                res.should.have.status(200);
+                res.body.success.should.be.true;
 
-    //             done();
-    //           });
-    //       })
-    //       .catch((err) => {
-    //         err.should.not.exist;
-    //         throw err;
-    //       });
+                models.User
+                  .findOne({
+                    where: { id: clientId }
+                  })
+                  .then((user) => {
+                    user.id.should.eql(newClientUser.id);
+                    user.first_name.should.eql(userForm.first_name);
+                    user.last_name.should.eql(userForm.last_name);
+                    user.email.should.eql(userForm.email);
+                    user.password.should.eql(userForm.password);
+                    normalizeStringToInteger(user.role).should.eql(newClientUser.role);
+                    user.AccountId.should.eql(newClientUser.AccountId);
+                    
+                    done();
+                  })
+                  .catch((err) => {
+                    err.should.not.exist;
+                    throw err;
+                  });
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
 
-    //   }
+      }
 
-    //   createModels(modelsToCreate, cb);
+      createModels(modelsToCreate, cb);
 
-    // });
+    });
 
-    // it('should return success if admin',
-    //   (done) => {
+    it('should return success if admin',
+      (done) => {
 
-    //   const modelsToCreate = [{
-    //     model: models.Account,
-    //     obj: newAccount
-    //   }, {
-    //     model: models.User,
-    //     obj: newAdminUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newClientUser
-    //   }, {
-    //     model: models.User,
-    //     obj: newIrrelevantClientUser
-    //   }];
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.User,
+        obj: newIrrelevantClientUser
+      }];
 
-    //   const cb = () => {
+      const cb = () => {
 
-    //     const loginForm = {
-    //       email: newAdminUser.email,
-    //       password: password
-    //     };
+        const loginForm = {
+          email: newAdminUser.email,
+          password: password
+        };
 
-    //     // chai agent is required for accessing cookies
-    //     const agent = chai.request.agent(app);
-    //     agent
-    //       .post('/users/login')
-    //       .send(loginForm)
-    //       .then((res) => {
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
             
-    //         res.should.have.status(200);
-    //         // parse userId cookie value from chai response object
-    //         const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
-    //         // parse userRole cookie value from chai response object
-    //         const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
-    //             .replace(new RegExp('%22','g'), '');
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
 
 
-    //         // trying to access newClientUser as newAdminUSer
-    //         chai.request(app)
-    //           .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
-    //           .end((err, res) => {
-    //             if (err) {
-    //               err.should.not.exist;
-    //               done();
-    //             }
+            // trying to update newClientUser as newAdminUSer
+            chai.request(app)
+              .put(`/users/${clientId}/?userId=${userId}&userRole=${userRole}`)
+              .send(userForm)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  done();
+                }
 
-    //             res.should.have.status(200);
-    //             res.body.success.should.be.true;
+                res.should.have.status(200);
+                res.body.success.should.be.true;
 
-    //             done();
-    //           });
-    //       })
-    //       .catch((err) => {
-    //         err.should.not.exist;
-    //         throw err;
-    //       });
+                models.User
+                  .findOne({
+                    where: { id: clientId }
+                  })
+                  .then((user) => {
+                    user.id.should.eql(newClientUser.id);
+                    user.first_name.should.eql(userForm.first_name);
+                    user.last_name.should.eql(userForm.last_name);
+                    user.email.should.eql(userForm.email);
+                    user.password.should.eql(userForm.password);
+                    normalizeStringToInteger(user.role).should.eql(newClientUser.role);
+                    user.AccountId.should.eql(newClientUser.AccountId);
+                    
+                    done();
+                  })
+                  .catch((err) => {
+                    err.should.not.exist;
+                    throw err;
+                  });
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
 
-    //   }
+      }
 
-    //   createModels(modelsToCreate, cb);
+      createModels(modelsToCreate, cb);
 
-    // });
+    });
 
   });
 
