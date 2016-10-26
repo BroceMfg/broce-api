@@ -122,6 +122,60 @@ router.post('/', (req, res) => {
 
 });
 
+// GET /orders/quoted -- Owner or Admin Only
+router.get('/quoted', (req, res) => {
+
+  res.json({
+    message: 'quoted'
+  });
+
+});
+
+// GET /orders/priced -- Owner or Admin Only
+router.get('/priced', (req, res) => {
+
+  res.json({
+    message: 'priced'
+  });
+
+});
+
+// GET /orders/ordered -- Owner or Admin Only
+router.get('/ordered', (req, res) => {
+
+  res.json({
+    message: 'ordered'
+  });
+
+});
+
+// GET /orders/shipped -- Owner or Admin Only
+router.get('/shipped', (req, res) => {
+
+  res.json({
+    message: 'shipped'
+  });
+
+});
+
+// GET /orders/archived -- Owner or Admin Only
+router.get('/archived', (req, res) => {
+
+  res.json({
+    message: 'archived'
+  });
+
+});
+
+// GET /orders/abandoned -- Owner or Admin Only
+router.get('/abandoned', (req, res) => {
+
+  res.json({
+    message: 'abandoned'
+  });
+
+});
+
 // GET /orders/{id} -- Owner or Admin Only
 router.get('/:id', (req, res) => {
 
@@ -291,6 +345,6 @@ router.delete('/:id', (req, res) => {
       handleDBFindErrorAndRespondWithAppropriateJSON(err);
     });
 
-})
+});
 
 module.exports = router;
