@@ -124,6 +124,18 @@ router.post('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
 
+  // let system know how to relate Order_Detail and Order
+  models.Order_Detail.belongsTo(models.Order, { foreignKey: 'OrderId' });
+  models.Order.belongsTo(models.Order_Detail, { foreignKey: 'id' });
+
+  // let system know how to relate Order_Status and Order
+  models.Order_Status.belongsTo(models.Order, { foreignKey: 'OrderId' });
+  models.Order.belongsTo(models.Order_Status, { foreignKey: 'id' });
+
+  // let system know how to relate Order_Detail and Part
+  models.Order_Detail.belongsTo(models.Part, { foreignKey: 'part_id' });
+  models.Part.belongsTo(models.Order_Detail, { foreignKey: 'id' });
+
   if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
@@ -137,14 +149,102 @@ router.get('/:id', (req, res) => {
     .findOne({
       where: {
         id
+      },
+      include: [{
+        model: models.Order_Detail,
+        attributes: [
+          'machine_serial_num',
+          'quantity',
+          'price',
+          'createdAt',
+          'updatedAt'
+        ],
+        include: [{
+          model: models.Part,
+          attributes: [
+            'number',
+            'description',
+            'cost',
+            'image_url',
+            'createdAt',
+            'updatedAt'
+          ]
+        }]
+      }, {
+        model: models.Order_Status,
+        attributes: [
+          'current',
+          'createdAt',
+          'updatedAt',
+          'StatusTypeId'
+        ]
+      }]
+    })
+    .then((order) => {
+      if (order == undefined || order.UserId == undefined) {
+        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+          'order does not contain a UserId property'));
+      } else {
+        checkPermissions(req, res, null, order.UserId, () => cb(order))
+      }
+    })
+    .catch((err) => {
+      handleDBFindErrorAndRespondWithAppropriateJSON(err);
+    });
+
+});
+
+router.put('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = (order) => {
+
+    console.log('hello')
+
+    const b = req.body;
+
+    // only allows for updating the shipping_address, shipping_city, shipping_state, 
+    // shipping_zip, and po_number fields
+    let orderObj = {
+      shipping_address: b.shipping_address || order.shipping_address,
+      shipping_city: b.shipping_city || order.shipping_city,
+      shipping_state: b.shipping_state || order.shipping_state,
+      shipping_zip: b.shipping_zip || order.shipping_zip,
+      po_number: b.po_number || order.po_number
+    };
+
+    models.Order
+      .update(orderObj, {
+        where: {
+          id: order.id
+        }
+      })
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      });
+
+  }
+
+  models.Order
+    .findOne({
+      where: {
+        id
       }
     })
     .then((order) => {
-      if (order == undefined || order.UserId == undefined) handleDBFindErrorAndRespondWithAppropriateJSON
-        (
-        new Error('no user id', 'order does not contain a UserId property'));
-      else {
-        checkPermissions(req, res, null, order.UserId, () => cb(order))
+      console.log(order.UserId);
+      if (order == undefined || order.UserId == undefined) {
+        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+          'order does not contain a UserId property'));
+      } else {
+        checkPermissions(req, res, null, order.UserId, () => cb(order));
       }
     })
     .catch((err) => {
