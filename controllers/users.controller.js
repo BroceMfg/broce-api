@@ -78,8 +78,8 @@ router.post('/', (req, res) => {
   if (!req.body.last_name) return notProvidedFieldErrorResponse(res, 'last_name');
   if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
   if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
-  if (!req.body.role) return notProvidedFieldErrorResponse(res, 'role');
-  if (!req.body.accountId) return notProvidedFieldErrorResponse(res, 'accountId');
+  if (req.body.role == undefined) return notProvidedFieldErrorResponse(res, 'role');
+  if (req.body.accountId == undefined) return notProvidedFieldErrorResponse(res, 'accountId');
 
   models.User
     .findOne({
@@ -121,7 +121,7 @@ router.post('/', (req, res) => {
 // GET /users/{id} - only the user or admin can access
 router.get('/:id', (req, res) => {
 
-  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -147,7 +147,7 @@ router.get('/:id', (req, res) => {
 
 router.put('/:id', (req, res) => {
 
-  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -197,7 +197,7 @@ router.put('/:id', (req, res) => {
 
 router.delete('/:id', (req, res) => {
 
-  if (!req.params || !req.params.id) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
