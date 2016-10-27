@@ -26,7 +26,7 @@ includes:
     POSTGRESQL_LOCAL_HOST=localhost
     SESSION_SECRET=%K1TMpLqIymi
     COOKIE_SECRET=1j5F&OJGL7!s
-    ```
+    ```  
 
 - Open a new terminal tab and start a local PostreSQL instace. (On Unix systems, the command is `postgres -D /usr/local/var/postgres`)
 
