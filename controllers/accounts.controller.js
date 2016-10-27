@@ -26,6 +26,52 @@ router.get('/', (req, res) => {
 
 });
 
+// POST /accounts - ADMIN ONLY
+router.post('/', (req, res) => {
+
+  const cb = () => {
+
+    // check to make sure all required form fields exist
+    if (!req.body.account_name)
+      return notProvidedFieldErrorResponse(res, 'account_name');
+    if (!req.body.billing_address)
+      return notProvidedFieldErrorResponse(res, 'billing_address');
+    if (!req.body.billing_city)
+      return notProvidedFieldErrorResponse(res, 'billing_city');
+    if (!req.body.billing_state)
+      return notProvidedFieldErrorResponse(res, 'billing_state');
+
+    const newAccount = {
+      account_name: req.body.account_name,
+      billing_address: req.body.billing_address,
+      billing_city: req.body.billing_city,
+      billing_state:req.body.billing_state,
+    };
+
+    models.Account
+      .create(newAccount)
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        console.log(err.stack);
+        res.status(500).json({
+          success: false,
+          error: process.env.NODE_ENV !== 'production' 
+              ? err.message : 'internal server error'
+        });
+        throw err;
+      });
+
+  }
+
+  // check permission for userRole = 1 means only admins can post
+  checkPermissions(req, res, 1, null, cb);
+
+});
+
 // GET /accounts/{id} - Member or Admin Only
 router.get('/:id', (req, res) => {
 

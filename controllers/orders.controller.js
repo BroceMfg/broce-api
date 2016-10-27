@@ -86,9 +86,17 @@ router.post('/', (req, res) => {
     if (!req.body.po_number) return notProvidedFieldErrorResponse(res, 'po_number');
 
     // get current user's id
+    const userId = process.env.NODE_ENV === 'test' ? 
+      require('./helpers/checkPermissions/getUserId.test')(req) : 
+      normalizeNumberString(req.session.user.id);
+
     // make sure it's a valid userId
-    // TODO: actually get the logged in user's id
-    const userId = 1;
+    if (userId == undefined) {
+      return res.status(403).json({
+        success: false,
+        message: 'error: no user data found'
+      });
+    }
 
     const newOrder = {
       shipping_address: req.body.shipping_address,
@@ -102,7 +110,7 @@ router.post('/', (req, res) => {
     models.Order
       .create(newOrder)
       .then((success) => {
-        return res.json({
+        res.json({
           success: true
         });
       })
