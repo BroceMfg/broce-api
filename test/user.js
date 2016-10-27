@@ -700,7 +700,7 @@ describe('Users', () => {
 
         // trying to access newClientUser as unauthenticated user
         chai.request(app)
-          .get('/users/2')
+          .get(`/users/${newClientUser.id}`)
           .end((err, res) => {
 
             err.should.exist;
@@ -760,7 +760,7 @@ describe('Users', () => {
 
             // trying to access newIrrelevantClientUser as newClientUser
             chai.request(app)
-              .get(`/users/3/?userId=${userId}&userRole=${userRole}`)
+              .get(`/users/${newIrrelevantClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 
                 err.should.exist;
@@ -824,7 +824,7 @@ describe('Users', () => {
 
             // trying to access newClientUser as newClientUser
             chai.request(app)
-              .get(`/users/2/?userId=${userId}&userRole=${userRole}`)
+              .get(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 if (err) {
                   err.should.not.exist;
@@ -897,7 +897,7 @@ describe('Users', () => {
 
             // trying to access newClientUser as newAdminUSer
             chai.request(app)
-              .get(`/users/2/?userId=${userId}&userRole=${userRole}`)
+              .get(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 if (err) {
                   err.should.not.exist;
@@ -951,10 +951,8 @@ describe('Users', () => {
       AccountId: 1
     };
 
-    const clientId = 2;
-
     const newClientUser = {
-      id: clientId,
+      id: 2,
       first_name: 'John',
       last_name: 'Doe',
       email: 'john@doe.com',
@@ -1002,7 +1000,7 @@ describe('Users', () => {
 
         // trying to update newClientUser as unauthenticated user
         chai.request(app)
-          .put('/users/2')
+          .put(`/users/${newClientUser.id}`)
           .send(userForm)
           .end((err, res) => {
 
@@ -1060,7 +1058,7 @@ describe('Users', () => {
 
             // trying to update newIrrelevantClientUser as newClientUser
             chai.request(app)
-              .put(`/users/3/?userId=${userId}&userRole=${userRole}`)
+              .put(`/users/${newIrrelevantClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .send(userForm)
               .end((err, res) => {
                 
@@ -1125,7 +1123,7 @@ describe('Users', () => {
 
             // trying to update newClientUser as newClientUser
             chai.request(app)
-              .put(`/users/${clientId}/?userId=${userId}&userRole=${userRole}`)
+              .put(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .send(userForm)
               .end((err, res) => {
                 if (err) {
@@ -1138,7 +1136,7 @@ describe('Users', () => {
 
                 models.User
                   .findOne({
-                    where: { id: clientId }
+                    where: { id: newClientUser.id }
                   })
                   .then((user) => {
                     user.id.should.eql(newClientUser.id);
@@ -1210,7 +1208,7 @@ describe('Users', () => {
 
             // trying to update newClientUser as newAdminUSer
             chai.request(app)
-              .put(`/users/${clientId}/?userId=${userId}&userRole=${userRole}`)
+              .put(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .send(userForm)
               .end((err, res) => {
                 if (err) {
@@ -1223,7 +1221,7 @@ describe('Users', () => {
 
                 models.User
                   .findOne({
-                    where: { id: clientId }
+                    where: { id: newClientUser.id }
                   })
                   .then((user) => {
                     user.id.should.eql(newClientUser.id);
@@ -1317,7 +1315,7 @@ describe('Users', () => {
 
         // trying to access newClientUser as unauthenticated user
         chai.request(app)
-          .delete('/users/2')
+          .delete(`/users/${newClientUser.id}`)
           .end((err, res) => {
 
             err.should.exist;
@@ -1377,7 +1375,7 @@ describe('Users', () => {
 
             // trying to delete newIrrelevantClientUser as newClientUser
             chai.request(app)
-              .delete(`/users/3/?userId=${userId}&userRole=${userRole}`)
+              .delete(`/users/${newIrrelevantClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 
                 err.should.exist;
@@ -1441,7 +1439,7 @@ describe('Users', () => {
 
             // trying to delete newClientUser as newClientUser
             chai.request(app)
-              .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
+              .delete(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 if (err) {
                   err.should.not.exist;
@@ -1507,7 +1505,7 @@ describe('Users', () => {
 
             // trying to access newClientUser as newAdminUSer
             chai.request(app)
-              .delete(`/users/2/?userId=${userId}&userRole=${userRole}`)
+              .delete(`/users/${newClientUser.id}/?userId=${userId}&userRole=${userRole}`)
               .end((err, res) => {
                 if (err) {
                   err.should.not.exist;

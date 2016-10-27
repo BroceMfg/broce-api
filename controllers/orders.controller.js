@@ -271,7 +271,7 @@ router.put('/:id', (req, res) => {
 
     // only allows for updating the shipping_address, shipping_city, shipping_state, 
     // shipping_zip, and po_number fields
-    let orderObj = {
+    const orderObj = {
       shipping_address: b.shipping_address || order.shipping_address,
       shipping_city: b.shipping_city || order.shipping_city,
       shipping_state: b.shipping_state || order.shipping_state,

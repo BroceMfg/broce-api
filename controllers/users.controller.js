@@ -163,7 +163,7 @@ router.put('/:id', (req, res) => {
 
         // only allows for updating the first_name, last_name, email, 
         // and password fields
-        let userObj = {
+        const userObj = {
           first_name: b.first_name || user.first_name,
           last_name: b.last_name || user.last_name,
           email: b.email || user.email,

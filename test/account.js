@@ -638,4 +638,214 @@ describe('Accounts', () => {
 
   });
 
+  describe('PUT /accounts/{id} - ADMIN ONLY', () => {
+
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const newAccount2 = {
+      id: 2,
+      account_name: 'John Deere',
+      billing_address: '2 Main Street',
+      billing_city: 'kinda-main city',
+      billing_state: 'kinda-main state'
+    };
+
+    const password = 'password';
+
+    const newClientUser = {
+      id: 2,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newIrrelevantClientUser = {
+      id: 3,
+      first_name: 'Bob',
+      last_name: 'Builder',
+      email: 'bob@bob.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 2
+    };
+
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      AccountId: 1
+    };
+
+    const accountForm = {
+      account_name: 'a new account_name',
+      billing_address: 'a new billing_address',
+      billing_city: 'a new billing_city',
+      billing_state: 'a new billing_state'
+    };
+
+    it('should return 403 forbidden response if not authenticated user', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }];
+
+      const cb = () => {
+
+        // trying to update newAccount as unauthenticated user
+        chai.request(app)
+          .put(`/accounts/${newAccount.id}`)
+          .send(accountForm)
+          .end((err, res) => {
+
+            res.should.have.status(403);
+            res.body.success.should.be.false;
+            assert.typeOf(res.body.message, 'string');
+            res.body.message.should.contain('no user data found');
+
+            done();
+
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return 403 forbidden response if authenticated but not admin',
+      (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newClientUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to update newOrder as newIrrelevantUser
+            chai.request(app)
+              .put(`/accounts/${newAccount.id}?userId=${userId}&userRole=${userRole}`)
+              .send(accountForm)
+              .end((err, res) => {
+                
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.toLowerCase().should.contain('permission denied');
+
+                done();
+              });
+          })
+          .catch((err) => {
+            console.log(err.message);
+            err.should.not.exist;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return success if admin',
+      (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newAdminUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to update newOrder as newIrrelevantUser
+            chai.request(app)
+              .put(`/accounts/${newAccount.id}?userId=${userId}&userRole=${userRole}`)
+              .send(accountForm)
+              .end((err, res) => {
+                if (err) {
+                  console.log(err.mesaage)
+                  console.log(err)
+                  err.should.not.exist;
+                  done();
+                }
+                
+                res.should.have.status(200);
+                expect(res.body.success).to.be.true;
+
+                done();
+              });
+          })
+          .catch((err) => {
+            console.log(err.message);
+            err.should.not.exist;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+  });
+
 });

@@ -135,4 +135,62 @@ router.get('/:id', (req, res) => {
 
 });
 
+// PUT /accounts/{id} - ADMIN ONLY
+router.put('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb2 = (account) => {
+
+    const b = req.body;
+
+    // only allows for updating the account_name, billing_address,
+    // billing_city, and billing_state
+    const accountObj = {
+      account_name: b.account_name || account.account_name,
+      billing_address: b.billing_address || account.billing_address,
+      billing_city: b.billing_city || account.billing_city,
+      billing_state: b.billing_state || account.billing_state
+    };
+
+    models.Account
+      .update(accountObj, {
+        where: {
+          id: account.id
+        }
+      })
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  const cb = () => {
+
+    models.Account
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((account) => {
+        cb2(account);
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  checkPermissions(req, res, 1, null, cb);
+
+})
+
 module.exports = router;
