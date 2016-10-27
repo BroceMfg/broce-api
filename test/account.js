@@ -20,7 +20,7 @@ describe('Accounts', () => {
 
   });
 
-  describe('GET /users - ADMIN ONLY', () => {
+  describe('GET /accounts - ADMIN ONLY', () => {
 
     const newAccount = {
       id: 1,
