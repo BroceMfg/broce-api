@@ -11,7 +11,7 @@ includes:
 
 - Install PostgreSQL for your system at [https://www.postgresql.org/download/](https://www.postgresql.org/download/)
 
-- Install redis for your system at [http://redis.io/](http://redis.io/)
+- Install redis for your system at [http://redis.io/download](http://redis.io/download)
 
 - Clone this git repo, then `cd` into the directory.
 
