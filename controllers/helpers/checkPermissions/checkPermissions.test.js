@@ -1,28 +1,18 @@
 const normalizeNumberString = require('../normalizeNumberString');
+const internalServerError = require('../internalServerError');
+const noUserData = require('../noUserData');
+const permissionDenied = require('../permissionDenied');
 
 const checkPermissions = (req, res, role, userId, cb) => {
 
-  let userRole = (req.cookies && req.cookies.userRole) ? 
-    normalizeNumberString(req.cookies.userRole) : undefined;
-  if (userRole === undefined) {
-    userRole = (req.query && req.query.userRole) ? 
-      normalizeNumberString(req.query.userRole) : undefined;
-  }
+  const userRole = require('./getUserRole.test')(req);
 
   if (userId != undefined) {
     
-    let id = (req.cookies && req.cookies.userId) ? 
-      normalizeNumberString(req.cookies.userId) : undefined;
-    if (id === undefined) {
-      id = (req.query && req.query.userId) ? 
-        normalizeNumberString(req.query.userId) : undefined;
-    }
+    const id = require('./getUserId.test')(req);
 
     if (id === undefined) {
-      return res.status(403).json({
-        success: false,
-        message: 'error: no user data found'
-      });
+      return noUserData(res);
     } else if (userRole === 1) {
       // admin has permissions that any user has
       return cb();
@@ -31,33 +21,21 @@ const checkPermissions = (req, res, role, userId, cb) => {
       return cb();
     } else {
       // user is trying to access a route they don't have permission to
-      return res.status(403).json({
-        success: false,
-        message: 'error: permission denied'
-      });
+      return permissionDenied(res);
     }
 
   } else if (role != undefined) {
 
     if (userRole === undefined) {
-      return res.status(403).json({
-        success: false,
-        message: 'error: no user data found'
-      });
+      return noUserData(res);
     } else if (userRole >= role) {
       return cb();
     } else {
-      return res.status(403).json({
-        success: false,
-        message: 'error: permission denied'
-      });
+      return permissionDenied(res);
     }
 
   } else {
-    return res.status(500).json({
-      success: false,
-      message: 'error: internal server error'
-    });
+    return internalServerError(res);
   }
 }
 

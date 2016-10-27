@@ -25,6 +25,7 @@ const deleteModels = (models, cb, i) => {
 // each object will contain the model itself and an object of dummy data in the format:
 // { model: <dbModel>, obj: <dataObj> }
 const createModels = (models, cb, i) => {
+  if (models.length <= 0) return cb ? cb() : undefined;
   i = i || 0;
   models[i].model
     .create(models[i].obj)

@@ -1,4 +1,4 @@
-const handleDBFindErrorAndRespondWithAppropriateJSON = (err) => {
+const handleDBFindErrorAndRespondWithAppropriateJSON = (err, res) => {
   console.error(err.stack);
   return res.status(500).json({
     success: false,

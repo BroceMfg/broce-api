@@ -239,13 +239,13 @@ router.get('/:id', (req, res) => {
     .then((order) => {
       if (order == undefined || order.UserId == undefined) {
         handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
-          'order does not contain a UserId property'));
+          'order does not contain a UserId property'), res);
       } else {
         checkPermissions(req, res, null, order.UserId, () => cb(order))
       }
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
     });
 
 });
@@ -283,7 +283,7 @@ router.put('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       });
 
   }
@@ -297,13 +297,13 @@ router.put('/:id', (req, res) => {
     .then((order) => {
       if (order == undefined || order.UserId == undefined) {
         handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
-          'order does not contain a UserId property'));
+          'order does not contain a UserId property'), res);
       } else {
         checkPermissions(req, res, null, order.UserId, () => cb(order));
       }
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
     });
 
 });
@@ -323,7 +323,7 @@ router.delete('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       });
   }
 
@@ -336,13 +336,13 @@ router.delete('/:id', (req, res) => {
     .then((order) => {
       if (order == undefined || order.UserId == undefined) {
         handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
-          'order does not contain a UserId property'));
+          'order does not contain a UserId property'), res);
       } else {
         checkPermissions(req, res, 1, null, () => cb(order));
       }
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err);
+      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
     });
 
 });

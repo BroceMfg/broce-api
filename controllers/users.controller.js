@@ -63,7 +63,7 @@ router.get('/', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       });
   }
 
@@ -137,7 +137,7 @@ router.get('/:id', (req, res) => {
         })
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       });
   }
 
@@ -182,12 +182,12 @@ router.put('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            handleDBFindErrorAndRespondWithAppropriateJSON(err);
+            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
           });
 
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       })
   }
 
@@ -215,11 +215,11 @@ router.delete('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            handleDBFindErrorAndRespondWithAppropriateJSON(err);
+            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
           });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err);
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
       });
   }
 
