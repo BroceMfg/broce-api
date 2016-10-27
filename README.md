@@ -19,17 +19,15 @@ includes:
 
 - Create a `.env` file in the main project directory to hold our global node variables.
 
-  - This file should look like this:
-
-  - ``` POSTGRESQL_LOCAL_DB=broce_parts
-    POSTGRESQL_LOCAL_DB=broce_parts
-    POSTGRESQL_LOCAL_HOST=localhost
-    SESSION_SECRET=%K1TMpLqIymi
-    COOKIE_SECRET=1j5F&OJGL7!s
-    ```
-
-  ​
-
+  - This file should look like this:  
+  ```  
+  POSTGRESQL_LOCAL_DB=broce_parts
+  POSTGRESQL_LOCAL_DB=broce_parts
+  POSTGRESQL_LOCAL_HOST=localhost
+  SESSION_SECRET=%K1TMpLqIymi
+  COOKIE_SECRET=1j5F&OJGL7!s  
+  ```  
+ ​
 - Open a new terminal tab and start a local PostreSQL instace. (On Unix systems, the command is `postgres -D /usr/local/var/postgres`)
 
 - Open another terminal tab and start a local redis server instace. (On Unix systems, the command is simply `redis-server`)
