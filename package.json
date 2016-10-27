@@ -6,11 +6,12 @@
   "scripts": {
     "test": "NODE_ENV=test mocha --require ./test/helper.js --timeout 10000",
     "test:watch": "npm run test -- --watch",
-    "dev": "NODE_ENV=dev nodemon bin/server"
+    "dev": "NODE_ENV=dev nodemon bin/server",
+    "prod": "NODE_ENV=production node bin/server"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://andrew-ware@bitbucket.org/andrew-ware/broce.git"
+    "url": "git+https://github.com/BroceMfg/broce-api.git"
   },
   "keywords": [],
   "author": "",
