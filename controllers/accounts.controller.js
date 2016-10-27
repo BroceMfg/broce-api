@@ -191,6 +191,42 @@ router.put('/:id', (req, res) => {
 
   checkPermissions(req, res, 1, null, cb);
 
-})
+});
+
+// DELETE /acounts/{id} - ADMIN ONLY
+router.delete('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+
+    models.Account
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((account) => {
+        account.destroy({ force: true })
+          .then((success) => {
+            res.json({
+              success: true
+            });
+          })
+          .catch((err) => {
+            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+          });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  checkPermissions(req, res, 1, null, cb);
+
+});
 
 module.exports = router;
