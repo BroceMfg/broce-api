@@ -274,4 +274,175 @@ describe('Accounts', () => {
 
   });
 
+  describe('POST /parts + form - ADMIN ONLY', () => {
+
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newClientUser = {
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      accountId: 1
+    };
+
+    const newPart = {
+      id: 1,
+      number: 'FX-22-LS-3',
+      description: 'foobar',
+      cost: 19.99,
+      image_url: 'image url'
+    };
+
+    it('should return 403 forbidden response if not authenticated user', (done) => {
+
+      chai.request(app)
+        .post('/parts')
+        .send(newPart)
+        .end((err, res) => {
+
+          err.should.exist;
+          res.should.have.status(403);
+          res.body.success.should.be.false;
+          assert.typeOf(res.body.message, 'string');
+          res.body.message.toLowerCase().should.contain('no user data found');
+          
+          done();
+        });
+      
+    });
+
+    it('should return 403 forbidden if authenticated user but not admin', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newClientUser.email,
+          password
+        };
+
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            chai.request(app)
+              .post(`/parts/?userId=${userId}&userRole=${userRole}`)
+              .send(newPart)
+              .end((err, res) => {
+
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.should.contain('permission denied');
+
+                done();
+              });
+
+          })
+          .catch((err) => {
+            console.log(`err.message = ${err.message}`)
+            err.should.not.exist;
+            done();
+          });
+      }
+
+      createModels(modelsToCreate, cb);
+      
+    });
+
+    it('should return success if authenticated admin user', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newAdminUser.email,
+          password
+        };
+
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            chai.request(app)
+              .post(`/parts/?userId=${userId}&userRole=${userRole}`)
+              .send(newPart)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  done();
+                }
+
+                res.should.have.status(200);
+                res.body.success.should.be.true;
+
+                done();
+              });
+
+          })
+          .catch((err) => {
+            console.log(err.stack);
+            throw err;
+          });
+      }
+
+      createModels(modelsToCreate, cb);
+      
+    });
+
+  });
+
 });

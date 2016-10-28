@@ -59,4 +59,44 @@ router.get('/:id', (req, res) => {
 
 });
 
+// POST /parts + form - ADMIN ONLY
+router.post('/', (req, res) => {
+
+  const cb = () => {
+
+    // check to make sure all required form fields exist
+    if (!req.body.number)
+      return notProvidedFieldErrorResponse(res, 'number');
+    if (!req.body.description)
+      return notProvidedFieldErrorResponse(res, 'description');
+    if (!req.body.cost)
+      return notProvidedFieldErrorResponse(res, 'cost');
+    if (!req.body.image_url)
+      return notProvidedFieldErrorResponse(res, 'image_url');
+
+    const partForm = {
+      number: req.body.number,
+      description: req.body.description,
+      cost: req.body.cost,
+      image_url: req.body.image_url
+    };
+
+    models.Part
+      .create(partForm)
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  // checkPermissions with userRole=1 means only admin has access
+  checkPermissions(req, res, 1, null, cb);
+
+});
+
 module.exports = router;
