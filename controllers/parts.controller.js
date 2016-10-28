@@ -29,4 +29,34 @@ router.get('/', (req, res) => {
 
 });
 
+// GET /parts/{id}
+router.get('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+  
+    models.Part
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((part) => {
+        res.json({
+          part
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  checkPermissions(req, res, 0, null, cb);
+
+});
+
 module.exports = router;
