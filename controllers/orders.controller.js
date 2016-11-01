@@ -230,9 +230,15 @@ router.get('/shipped', (req, res) => {
 // GET /orders/archived -- Owner or Admin Only
 router.get('/archived', (req, res) => {
 
-  res.json({
-    message: 'archived'
-  });
+  // StatusTypeId = 5 for priced
+  const cb = () => getOrderIdsForOrderStatusType(res, 5, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
