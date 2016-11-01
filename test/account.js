@@ -758,7 +758,7 @@ describe('Accounts', () => {
             const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
                 .replace(new RegExp('%22','g'), '');
 
-            // trying to update newOrder as newIrrelevantUser
+            // trying to update newOrder as newClientUser
             chai.request(app)
               .put(`/accounts/${newAccount.id}?userId=${userId}&userRole=${userRole}`)
               .send(accountForm)
@@ -817,7 +817,7 @@ describe('Accounts', () => {
             const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
                 .replace(new RegExp('%22','g'), '');
 
-            // trying to update newOrder as newIrrelevantUser
+            // trying to update newOrder as newAdminUser
             chai.request(app)
               .put(`/accounts/${newAccount.id}?userId=${userId}&userRole=${userRole}`)
               .send(accountForm)

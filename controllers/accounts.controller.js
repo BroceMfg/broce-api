@@ -142,6 +142,23 @@ router.put('/:id', (req, res) => {
     return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
+  const cb = () => {
+
+    models.Account
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((account) => {
+        cb2(account);
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
   const cb2 = (account) => {
 
     const b = req.body;
@@ -165,23 +182,6 @@ router.put('/:id', (req, res) => {
         res.json({
           success: true
         });
-      })
-      .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
-      });
-
-  }
-
-  const cb = () => {
-
-    models.Account
-      .findOne({
-        where: {
-          id
-        }
-      })
-      .then((account) => {
-        cb2(account);
       })
       .catch((err) => {
         handleDBFindErrorAndRespondWithAppropriateJSON(err, res);

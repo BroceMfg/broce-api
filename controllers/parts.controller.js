@@ -99,4 +99,63 @@ router.post('/', (req, res) => {
 
 });
 
+// PUT /parts + form - ADMIN ONLY
+router.put('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+
+    models.Part
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((part) => {
+        cb2(part);
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  const cb2 = (part) => {
+
+    const b = req.body;
+
+    // only allows for updating the number, description,
+    // cost, and image_url
+    const partObj = {
+      number: b.number || part.number,
+      description: b.description || part.description,
+      cost: b.cost || part.cost,
+      image_url: b.image_url || part.image_url
+    };
+
+    models.Account
+      .update(partObj, {
+        where: {
+          id: part.id
+        }
+      })
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
+
+});
+
 module.exports = router;
