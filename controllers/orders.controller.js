@@ -212,7 +212,7 @@ router.get('/ordered', (req, res) => {
 
 });
 
-// GET /orders/shipped -- Owner or Admin Only
+// GET /orders/shipped - Admin Only
 router.get('/shipped', (req, res) => {
 
   // StatusTypeId = 4 for priced
@@ -227,7 +227,7 @@ router.get('/shipped', (req, res) => {
 
 });
 
-// GET /orders/archived -- Owner or Admin Only
+// GET /orders/archived - Admin Only
 router.get('/archived', (req, res) => {
 
   // StatusTypeId = 5 for priced
@@ -245,9 +245,15 @@ router.get('/archived', (req, res) => {
 // GET /orders/abandoned -- Owner or Admin Only
 router.get('/abandoned', (req, res) => {
 
-  res.json({
-    message: 'abandoned'
-  });
+  // StatusTypeId = 6 for priced
+  const cb = () => getOrderIdsForOrderStatusType(res, 6, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
