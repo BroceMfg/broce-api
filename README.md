@@ -31,6 +31,7 @@ includes:
 
 - Open another terminal tab and start a local redis server instace. (On Unix systems, the command is simply `redis-server`)
 
-- Finally, we can start the API by running `npm run dev` in our main project directory.
+- Finally, we can start a development instance of the API by running `npm run
+dev` in our main project directory.
 
 - To run tests, run `npm run test` or `npm run test:watch` to have the tests run each time code changes are saved.
