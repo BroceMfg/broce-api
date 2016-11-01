@@ -170,6 +170,7 @@ router.post('/', (req, res) => {
 // GET /orders/quoted - Admin Only
 router.get('/quoted', (req, res) => {
 
+  // StatusTypeId = 1 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 1, cb2);
 
   const cb2 = (ids) => getOrders(res, ids, cb3);
@@ -184,9 +185,15 @@ router.get('/quoted', (req, res) => {
 // GET /orders/priced -- Owner or Admin Only
 router.get('/priced', (req, res) => {
 
-  res.json({
-    message: 'priced'
-  });
+  // StatusTypeId = 2 for priced
+  const cb = () => getOrderIdsForOrderStatusType(res, 2, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
 
 });
 

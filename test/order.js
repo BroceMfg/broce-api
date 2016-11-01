@@ -2010,4 +2010,500 @@ describe('Orders', () => {
 
   });
 
+  describe('GET /orders/priced - ADMIN ONLY', () => {
+
+    const newAccount = {
+      id: 1,
+      account_name: 'CAT',
+      billing_address: '1 Main Street',
+      billing_city: 'main city',
+      billing_state: 'main state'
+    };
+
+    const password = 'password';
+
+    const newClientUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@doe.com',
+      password: models.User.generateHash(password),
+      role: 0,
+      AccountId: 1
+    };
+
+    const newAdminUser = {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'jd@fake.com',
+      password: models.User.generateHash(password),
+      role: 1,
+      AccountId: 1
+    };
+
+    const newOrder = {
+      id: 1,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newQuotedOrder = {
+      id: 1,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newPricedOrder = {
+      id: 2,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newOrderedOrder = {
+      id: 3,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newShippedOrder = {
+      id: 4,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newArchivedOrder = {
+      id: 5,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newAbandonedOrder = {
+      id: 6,
+      shipping_address: 'an address',
+      shipping_city: 'a city',
+      shipping_state: 'a state',
+      shipping_zip: 11111,
+      po_number: '1234',
+      UserId: 1
+    };
+
+    const newQuotedOrderDetail = {
+      id: 1,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 1,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newPricedOrderDetail = {
+      id: 2,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 2,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newOrderedOrderDetail = {
+      id: 3,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 3,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newShippedOrderDetail = {
+      id: 4,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 4,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newArchivedOrderDetail = {
+      id: 5,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 5,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newAbandonedOrderDetail = {
+      id: 6,
+      machine_serial_num: 77,
+      quantity: 1,
+      price: 19.99,
+      OrderId: 6,
+      ShippingOptionId: 1,
+      ShippingDetailId: 1,
+      part_id: 1
+    };
+
+    const newPart = {
+      id: 1,
+      number: 'FX-22-LS-3',
+      description: 'foobar',
+      cost: 19.99,
+      image_url: 'image url'
+    };
+
+    const newQuotedOrderStatus = {
+      id: 1,
+      current: true,
+      StatusTypeId: 1,
+      OrderId: 1
+    };
+
+    const newPricedOrderStatus = {
+      id: 2,
+      current: true,
+      StatusTypeId: 2,
+      OrderId: 2
+    };
+
+    const newOrderedOrderStatus = {
+      id: 3,
+      current: false,
+      StatusTypeId: 3,
+      OrderId: 3
+    };
+
+    const newShippedOrderStatus = {
+      id: 4,
+      current: false,
+      StatusTypeId: 4,
+      OrderId: 4
+    };
+
+    const newArchivedOrderStatus = {
+      id: 5,
+      current: false,
+      StatusTypeId: 5,
+      OrderId: 5
+    };
+
+    const newAbandonedOrderStatus = {
+      id: 6,
+      current: false,
+      StatusTypeId: 6,
+      OrderId: 6
+    };
+
+    it('should return 403 forbidden if not authenticated user', (done) => {
+
+      chai.request(app)
+        .get('/orders/priced')
+        .end((err, res) => {
+          err.should.exist;
+          res.should.have.status(403);
+          res.body.success.should.be.false;
+          assert.typeOf(res.body.message, 'string');
+          res.body.message.should.contain('no user data found');
+
+          done();
+        });
+
+    });
+
+    it('should return 403 forbidden if authenticated but not admin', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newClientUser
+      }, {
+        model: models.Order,
+        obj: newQuotedOrder
+      }, {
+        model: models.Order,
+        obj: newPricedOrder
+      }, {
+        model: models.Order,
+        obj: newOrderedOrder
+      }, {
+        model: models.Order,
+        obj: newShippedOrder
+      }, {
+        model: models.Order,
+        obj: newArchivedOrder
+      }, {
+        model: models.Order,
+        obj: newAbandonedOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newQuotedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newPricedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newShippedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newArchivedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newAbandonedOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newQuotedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newPricedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newOrderedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newShippedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newArchivedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newAbandonedOrderStatus
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newClientUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to get quoted orders as newClientUser
+            chai.request(app)
+              .get(`/orders/priced/?userId=${userId}&userRole=${userRole}`)
+              .end((err, res) => {
+
+                err.should.exist;
+                res.should.have.status(403);
+                res.body.success.should.be.false;
+                assert.typeOf(res.body.message, 'string');
+                res.body.message.toLowerCase().should.contain('permission denied');
+
+                done();
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+    it('should return quoted orders if admin', (done) => {
+
+      const modelsToCreate = [{
+        model: models.Account,
+        obj: newAccount
+      }, {
+        model: models.User,
+        obj: newAdminUser
+      }, {
+        model: models.Order,
+        obj: newQuotedOrder
+      }, {
+        model: models.Order,
+        obj: newPricedOrder
+      }, {
+        model: models.Order,
+        obj: newOrderedOrder
+      }, {
+        model: models.Order,
+        obj: newShippedOrder
+      }, {
+        model: models.Order,
+        obj: newArchivedOrder
+      }, {
+        model: models.Order,
+        obj: newAbandonedOrder
+      }, {
+        model: models.Part,
+        obj: newPart
+      }, {
+        model: models.Order_Detail,
+        obj: newQuotedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newPricedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newOrderedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newShippedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newArchivedOrderDetail
+      }, {
+        model: models.Order_Detail,
+        obj: newAbandonedOrderDetail
+      }, {
+        model: models.Order_Status,
+        obj: newQuotedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newPricedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newOrderedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newShippedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newArchivedOrderStatus
+      }, {
+        model: models.Order_Status,
+        obj: newAbandonedOrderStatus
+      }];
+
+      const cb = () => {
+
+        const loginForm = {
+          email: newAdminUser.email,
+          password: password
+        };
+
+        // chai agent is required for accessing cookies
+        const agent = chai.request.agent(app);
+        agent
+          .post('/users/login')
+          .send(loginForm)
+          .then((res) => {
+            
+            res.should.have.status(200);
+            // parse userId cookie value from chai response object
+            const userId = res.header['set-cookie'][1].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+            // parse userRole cookie value from chai response object
+            const userRole = res.header['set-cookie'][0].split('=')[1].split(';')[0]
+                .replace(new RegExp('%22','g'), '');
+
+            // trying to get quoted orders as newAdminUser
+            chai.request(app)
+              .get(`/orders/priced/?userId=${userId}&userRole=${userRole}`)
+              .end((err, res) => {
+                if (err) {
+                  err.should.not.exist;
+                  done();
+                }
+
+                res.should.have.status(200);
+
+                // Orders
+                const orders = res.body.orders;
+                orders.should.be.a('array');
+                expect(orders.length).to.equal(1);
+                expect(orders[0].id).to.equal(newPricedOrder.id);
+                expect(orders[0].shipping_address).to.equal(newPricedOrder.shipping_address);
+                expect(orders[0].shipping_city).to.equal(newPricedOrder.shipping_city);
+                expect(orders[0].shipping_state).to.equal(newPricedOrder.shipping_state);
+                expect(orders[0].shipping_zip).to.equal(newPricedOrder.shipping_zip);
+                expect(orders[0].po_number).to.equal(newPricedOrder.
+                  po_number);
+                expect(orders[0].UserId).to.equal(newPricedOrder.UserId);
+                
+                // Order_Details
+                expect(orders[0].Order_Details).to.be.a('array');
+                expect(orders[0].Order_Details.length).to.equal(1);
+                expect(orders[0].Order_Details[0].machine_serial_num).to.equal(newPricedOrderDetail.machine_serial_num);
+                expect(orders[0].Order_Details[0].quantity).to.equal(newPricedOrderDetail.quantity);
+                expect(orders[0].Order_Details[0].price).to.equal(newPricedOrderDetail.price);
+                expect(orders[0].Order_Details[0].Part).to.be.a('object');
+                expect(orders[0].Order_Details[0].Part.number).to.equal(newPart.number);
+                expect(orders[0].Order_Details[0].Part.description).to.equal(newPart.description);
+                expect(orders[0].Order_Details[0].Part.cost).to.equal(newPart.cost);
+                expect(orders[0].Order_Details[0].Part.image_url).to.equal(newPart.image_url);
+                
+                // Order_Statuses
+                expect(orders[0].Order_Statuses).to.be.a('array');
+                expect(orders[0].Order_Statuses.length).to.equal(1);
+                expect(orders[0].Order_Statuses[0].current).to.equal(
+                  newPricedOrderStatus.current);
+                expect(orders[0].Order_Statuses[0].StatusTypeId).to.equal(newPricedOrderStatus.StatusTypeId);
+
+                done();
+              });
+          })
+          .catch((err) => {
+            err.should.not.exist;
+            throw err;
+          });
+
+      }
+
+      createModels(modelsToCreate, cb);
+
+    });
+
+  });
+
 });
