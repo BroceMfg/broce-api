@@ -182,7 +182,7 @@ router.get('/quoted', (req, res) => {
 
 });
 
-// GET /orders/priced -- Owner or Admin Only
+// GET /orders/priced - Admin Only
 router.get('/priced', (req, res) => {
 
   // StatusTypeId = 2 for priced
@@ -197,12 +197,18 @@ router.get('/priced', (req, res) => {
 
 });
 
-// GET /orders/ordered -- Owner or Admin Only
+// GET /orders/ordered - Admin Only
 router.get('/ordered', (req, res) => {
 
-  res.json({
-    message: 'ordered'
-  });
+  // StatusTypeId = 3 for priced
+  const cb = () => getOrderIdsForOrderStatusType(res, 3, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
