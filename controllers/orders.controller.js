@@ -5,69 +5,106 @@ const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const checkPermissions = require('./helpers/checkPermissions');
 const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handleDBFindErrorAndRespondWithAppropriateJSON');
 
+// ----- helper functions ----- //
+
+// let system know how to relate other tables to Order
+router.use((req, res, next) => {
+  // let system know how to relate Order_Detail and Order
+  models.Order_Detail.belongsTo(models.Order, { foreignKey: 'OrderId' });
+  models.Order.belongsTo(models.Order_Detail, { foreignKey: 'id' });
+
+  // let system know how to relate Order_Status and Order
+  models.Order_Status.belongsTo(models.Order, { foreignKey: 'OrderId' });
+  models.Order.belongsTo(models.Order_Status, { foreignKey: 'id' });
+
+  // let system know how to relate Order_Detail and Part
+  models.Order_Detail.belongsTo(models.Part, { foreignKey: 'part_id' });
+  models.Part.belongsTo(models.Order_Detail, { foreignKey: 'id' });
+
+  next();
+});
+
+// get Orders that match the given id(s)
+// res is the standard response obj.
+// ids should be an array, or undefined (for unrestricted findAll)
+// cb is the callback function which will get called with the orders, when complete
+const getOrders = (res, ids, cb) => {
+  models.Order
+    .findAll({
+      where: {
+        id: ids != undefined ? ids : {
+          $gte: 0
+        }
+      },
+      include: [{
+        model: models.Order_Detail,
+        attributes: [
+          'machine_serial_num',
+          'quantity',
+          'price',
+          'createdAt',
+          'updatedAt'
+        ],
+        include: [{
+          model: models.Part,
+          attributes: [
+            'number',
+            'description',
+            'cost',
+            'image_url',
+            'createdAt',
+            'updatedAt'
+          ]
+        }]
+      }, {
+        model: models.Order_Status,
+        attributes: [
+          'current',
+          'createdAt',
+          'updatedAt',
+          'StatusTypeId'
+        ]
+      }]
+  })
+  .then((orders) => {
+    cb(orders);
+  })
+  .catch((err) => {
+    handleDBFindErrorAndRespondWithAppropriateJSON(err, res)
+  });
+}
+
+// get orderIds that match the given StatusTypeId
+// res is the standard response obj.
+// orderStatusTypeId is the number of the desired StatusTypeId
+// cb is the callback function which will get called with the ids, when complete
+const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
+  models.Order_Status
+    .findAll({
+      where: {
+        StatusTypeId: orderStatusTypeId
+      },
+      attributes: ['OrderId']
+    })
+    .then((results) => {
+      const ids = results.map((result) => {
+        return result.OrderId;
+      });
+      
+      cb(ids);
+
+    })
+    .catch((err) => {
+      handleDBFindErrorAndRespondWithAppropriateJSON(err, res)
+    });
+}
+
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {
 
-  const cb = () => {
+  const cb = () => getOrders(res, cb2);
 
-    // let system know how to relate Order_Detail and Order
-    models.Order_Detail.belongsTo(models.Order, { foreignKey: 'OrderId' });
-    models.Order.belongsTo(models.Order_Detail, { foreignKey: 'id' });
-
-    // let system know how to relate Order_Status and Order
-    models.Order_Status.belongsTo(models.Order, { foreignKey: 'OrderId' });
-    models.Order.belongsTo(models.Order_Status, { foreignKey: 'id' });
-
-    // let system know how to relate Order_Detail and Part
-    models.Order_Detail.belongsTo(models.Part, { foreignKey: 'part_id' });
-    models.Part.belongsTo(models.Order_Detail, { foreignKey: 'id' });
-
-    models.Order
-      .findAll({
-        include: [{
-          model: models.Order_Detail,
-          attributes: [
-            'machine_serial_num',
-            'quantity',
-            'price',
-            'createdAt',
-            'updatedAt'
-          ],
-          include: [{
-            model: models.Part,
-            attributes: [
-              'number',
-              'description',
-              'cost',
-              'image_url',
-              'createdAt',
-              'updatedAt'
-            ]
-          }]
-        }, {
-          model: models.Order_Status,
-          attributes: [
-            'current',
-            'createdAt',
-            'updatedAt',
-            'StatusTypeId'
-          ]
-        }]
-      })
-      .then((orders) => {
-        res.json({
-          orders
-        });
-      })
-      .catch((err) => {
-        console.error(err.stack);
-        res.status(500).json({
-          success: false,
-          error: process.env.NODE_ENV !== 'production' 
-              ? err.message : 'internal server error'
-        });
-      });
-  }
+  const cb2 = (orders) => res.json({ orders });
 
   // check permission for userRole = 1 means ADMIN role only
   checkPermissions(req, res, 1, null, cb);
@@ -130,12 +167,17 @@ router.post('/', (req, res) => {
 
 });
 
-// GET /orders/quoted -- Owner or Admin Only
+// GET /orders/quoted - Admin Only
 router.get('/quoted', (req, res) => {
 
-  res.json({
-    message: 'quoted'
-  });
+  const cb = () => getOrderIdsForOrderStatusType(res, 1, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
@@ -187,74 +229,27 @@ router.get('/abandoned', (req, res) => {
 // GET /orders/{id} -- Owner or Admin Only
 router.get('/:id', (req, res) => {
 
-  // let system know how to relate Order_Detail and Order
-  models.Order_Detail.belongsTo(models.Order, { foreignKey: 'OrderId' });
-  models.Order.belongsTo(models.Order_Detail, { foreignKey: 'id' });
-
-  // let system know how to relate Order_Status and Order
-  models.Order_Status.belongsTo(models.Order, { foreignKey: 'OrderId' });
-  models.Order.belongsTo(models.Order_Status, { foreignKey: 'id' });
-
-  // let system know how to relate Order_Detail and Part
-  models.Order_Detail.belongsTo(models.Part, { foreignKey: 'part_id' });
-  models.Part.belongsTo(models.Order_Detail, { foreignKey: 'id' });
-
   if (req.params == undefined || req.params.id == undefined)
     return notProvidedFieldErrorResponse(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
-  const cb = (order) => {
+  const cb = (orders) => {
+    const order = orders[0];
+    if (order == undefined || order.UserId == undefined) {
+      handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+        'order does not contain a UserId property'), res);
+    } else {
+      checkPermissions(req, res, null, order.UserId, () => cb2(order))
+    }
+  }
+
+  const cb2 = (order) => {
     res.json({
       order
     });
   }
 
-  models.Order
-    .findOne({
-      where: {
-        id
-      },
-      include: [{
-        model: models.Order_Detail,
-        attributes: [
-          'machine_serial_num',
-          'quantity',
-          'price',
-          'createdAt',
-          'updatedAt'
-        ],
-        include: [{
-          model: models.Part,
-          attributes: [
-            'number',
-            'description',
-            'cost',
-            'image_url',
-            'createdAt',
-            'updatedAt'
-          ]
-        }]
-      }, {
-        model: models.Order_Status,
-        attributes: [
-          'current',
-          'createdAt',
-          'updatedAt',
-          'StatusTypeId'
-        ]
-      }]
-    })
-    .then((order) => {
-      if (order == undefined || order.UserId == undefined) {
-        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
-          'order does not contain a UserId property'), res);
-      } else {
-        checkPermissions(req, res, null, order.UserId, () => cb(order))
-      }
-    })
-    .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
-    });
+  getOrders(res, [id], cb);
 
 });
 

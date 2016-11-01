@@ -6,6 +6,8 @@
   "scripts": {
     "test": "NODE_ENV=test mocha --require ./test/helper.js --timeout 10000",
     "test:watch": "npm run test -- --watch",
+    "test1": "NODE_ENV=test mocha --grep ./test/helper.js $1",
+    "test1:watch": "npm run test1 -- --watch",
     "dev": "NODE_ENV=dev nodemon bin/server",
     "prod": "NODE_ENV=production node bin/server"
   },
