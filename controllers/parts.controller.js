@@ -99,7 +99,7 @@ router.post('/', (req, res) => {
 
 });
 
-// PUT /parts + form - ADMIN ONLY
+// PUT /parts/{id} + form - ADMIN ONLY
 router.put('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
@@ -146,6 +146,43 @@ router.put('/:id', (req, res) => {
         res.json({
           success: true
         });
+      })
+      .catch((err) => {
+        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      });
+
+  }
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
+
+});
+
+// DELETE /parts/{id} - ADMIN ONLY
+router.delete('/:id', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined)
+    return notProvidedFieldErrorResponse(res, 'id');
+  const id = normalizeStringToInteger(req.params.id);
+
+  const cb = () => {
+
+    models.Part
+      .findOne({
+        where: {
+          id
+        }
+      })
+      .then((part) => {
+        part.destroy({ force: true })
+          .then((success) => {
+            res.json({
+              success: true
+            });
+          })
+          .catch((err) => {
+            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+          });
       })
       .catch((err) => {
         handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
