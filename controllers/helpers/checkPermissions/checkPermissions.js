@@ -23,14 +23,14 @@ const checkPermissions = (req, res, role, userId, cb) => {
       return cb();
     } else {
       // user is trying to access a route they don't have permission to
-      return permissionDeniede(res);
+      return permissionDenied(res);
     }
   } else if (role != undefined) {
     if (req.session.user.role >= role) {
       return cb();
     } else {
       // user is trying to access a route they don't have permission to
-      return permissionDeniede(res);
+      return permissionDenied(res);
     }
   } else {
     return internalServerError(res);
