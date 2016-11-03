@@ -29,12 +29,12 @@ router.use((req, res, next) => {
 // ids should be an array, or undefined (for unrestricted findAll)
 // cb is the callback function which will get called with the orders, when complete
 const getOrders = (res, ids, cb) => {
+  const id = (ids != undefined) ? ids 
+    : { $gte: 0 };
   models.Order
     .findAll({
       where: {
-        id: ids != undefined ? ids : {
-          $gte: 0
-        }
+        id
       },
       include: [{
         model: models.Order_Detail,
@@ -102,9 +102,9 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
 // GET /orders - ADMIN ONLY
 router.get('/', (req, res) => {
 
-  const cb = () => getOrders(res, cb2);
-
   const cb2 = (orders) => res.json({ orders });
+
+  const cb = () => getOrders(res, undefined, cb2);
 
   // check permission for userRole = 1 means ADMIN role only
   checkPermissions(req, res, 1, null, cb);
@@ -267,8 +267,9 @@ router.get('/:id', (req, res) => {
   const cb = (orders) => {
     const order = orders[0];
     if (order == undefined || order.UserId == undefined) {
-      handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
-        'order does not contain a UserId property'), res);
+      handleDBFindErrorAndRespondWithAppropriateJSON(
+        new Error('no order with that id found',
+          'order does not contain a UserId property'), res);
     } else {
       checkPermissions(req, res, null, order.UserId, () => cb2(order))
     }
