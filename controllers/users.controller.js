@@ -1,15 +1,15 @@
 const router = require('express').Router();
 const models = require('../models');
-const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
+const notProvidedError = require('./helpers/notProvidedError');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const checkPermissions = require('./helpers/checkPermissions');
-const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handleDBFindErrorAndRespondWithAppropriateJSON');
+const handleDBError = require('./helpers/handleDBError');
 
 // POST /users/login - anyone can access
 router.post('/login', (req, res) => {
 
-  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
-  if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
+  if (!req.body.email) return notProvidedError(res, 'email');
+  if (!req.body.password) return notProvidedError(res, 'password');
 
   models.User
     .findOne({
@@ -18,11 +18,11 @@ router.post('/login', (req, res) => {
     .then((user) => {
 
       if (!user)
-        return notProvidedFieldErrorResponse(res, null, 
+        return notProvidedError(res, null, 
           'error: a user with that email does not exist');
 
       if (!models.User.validPassword(req.body.password, user.dataValues.password))
-        return notProvidedFieldErrorResponse(res, null, 'error: wrong password');
+        return notProvidedError(res, null, 'error: wrong password');
 
       else {
 
@@ -39,7 +39,8 @@ router.post('/login', (req, res) => {
           res.cookie('userId', userObj.id);
         }
         res.json({
-          success: true
+          success: true,
+          user: userObj
         });
 
       }
@@ -63,7 +64,7 @@ router.get('/', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
   }
 
@@ -74,12 +75,12 @@ router.get('/', (req, res) => {
 // POST /users - anyone can access
 router.post('/', (req, res) => {
 
-  if (!req.body.first_name) return notProvidedFieldErrorResponse(res, 'first_name');
-  if (!req.body.last_name) return notProvidedFieldErrorResponse(res, 'last_name');
-  if (!req.body.email) return notProvidedFieldErrorResponse(res, 'email');
-  if (!req.body.password) return notProvidedFieldErrorResponse(res, 'password');
-  if (req.body.role == undefined) return notProvidedFieldErrorResponse(res, 'role');
-  if (req.body.accountId == undefined) return notProvidedFieldErrorResponse(res, 'accountId');
+  if (!req.body.first_name) return notProvidedError(res, 'first_name');
+  if (!req.body.last_name) return notProvidedError(res, 'last_name');
+  if (!req.body.email) return notProvidedError(res, 'email');
+  if (!req.body.password) return notProvidedError(res, 'password');
+  if (req.body.role == undefined) return notProvidedError(res, 'role');
+  if (req.body.accountId == undefined) return notProvidedError(res, 'accountId');
 
   models.User
     .findOne({
@@ -121,7 +122,7 @@ router.post('/', (req, res) => {
 // GET /users/{id} - only the user or admin can access
 router.get('/:id', (req, res) => {
 
-  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -137,7 +138,7 @@ router.get('/:id', (req, res) => {
         })
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
   }
 
@@ -147,7 +148,7 @@ router.get('/:id', (req, res) => {
 
 router.put('/:id', (req, res) => {
 
-  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -182,12 +183,12 @@ router.put('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+            handleDBError(err, res);
           });
 
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       })
   }
 
@@ -197,7 +198,7 @@ router.put('/:id', (req, res) => {
 
 router.delete('/:id', (req, res) => {
 
-  if (req.params == undefined || req.params.id == undefined) return notProvidedFieldErrorResponse(res, 'id');
+  if (req.params == undefined || req.params.id == undefined) return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -215,11 +216,11 @@ router.delete('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+            handleDBError(err, res);
           });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
   }
 

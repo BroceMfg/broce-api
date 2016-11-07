@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const models = require('../models');
-const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
+const notProvidedError = require('./helpers/notProvidedError');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const checkPermissions = require('./helpers/checkPermissions');
-const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handleDBFindErrorAndRespondWithAppropriateJSON');
+const handleDBError = require('./helpers/handleDBError');
 
 // ----- helper functions ----- //
 
@@ -70,7 +70,7 @@ const getOrders = (res, ids, cb) => {
     cb(orders);
   })
   .catch((err) => {
-    handleDBFindErrorAndRespondWithAppropriateJSON(err, res)
+    handleDBError(err, res)
   });
 }
 
@@ -95,7 +95,7 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
 
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err, res)
+      handleDBError(err, res)
     });
 }
 
@@ -116,11 +116,11 @@ router.post('/', (req, res) => {
 
   const cb = () => {
     // check to make sure all required form fields exist
-    if (!req.body.shipping_address) return notProvidedFieldErrorResponse(res, 'shipping_address');
-    if (!req.body.shipping_city) return notProvidedFieldErrorResponse(res, 'shipping_city');
-    if (!req.body.shipping_state) return notProvidedFieldErrorResponse(res, 'shipping_state');
-    if (!req.body.shipping_zip) return notProvidedFieldErrorResponse(res, 'shipping_zip');
-    if (!req.body.po_number) return notProvidedFieldErrorResponse(res, 'po_number');
+    if (!req.body.shipping_address) return notProvidedError(res, 'shipping_address');
+    if (!req.body.shipping_city) return notProvidedError(res, 'shipping_city');
+    if (!req.body.shipping_state) return notProvidedError(res, 'shipping_state');
+    if (!req.body.shipping_zip) return notProvidedError(res, 'shipping_zip');
+    if (!req.body.po_number) return notProvidedError(res, 'po_number');
 
     // get current user's id
     const userId = process.env.NODE_ENV === 'test' ? 
@@ -261,13 +261,13 @@ router.get('/abandoned', (req, res) => {
 router.get('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = (orders) => {
     const order = orders[0];
     if (order == undefined || order.UserId == undefined) {
-      handleDBFindErrorAndRespondWithAppropriateJSON(
+      handleDBError(
         new Error('no order with that id found',
           'order does not contain a UserId property'), res);
     } else {
@@ -289,7 +289,7 @@ router.get('/:id', (req, res) => {
 router.put('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = (order) => {
@@ -318,7 +318,7 @@ router.put('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -331,14 +331,14 @@ router.put('/:id', (req, res) => {
     })
     .then((order) => {
       if (order == undefined || order.UserId == undefined) {
-        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+        handleDBError(new Error('no user id',
           'order does not contain a UserId property'), res);
       } else {
         checkPermissions(req, res, null, order.UserId, () => cb(order));
       }
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      handleDBError(err, res);
     });
 
 });
@@ -347,7 +347,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = (order) => {
@@ -358,7 +358,7 @@ router.delete('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
   }
 
@@ -370,14 +370,14 @@ router.delete('/:id', (req, res) => {
     })
     .then((order) => {
       if (order == undefined || order.UserId == undefined) {
-        handleDBFindErrorAndRespondWithAppropriateJSON(new Error('no user id',
+        handleDBError(new Error('no user id',
           'order does not contain a UserId property'), res);
       } else {
         checkPermissions(req, res, 1, null, () => cb(order));
       }
     })
     .catch((err) => {
-      handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+      handleDBError(err, res);
     });
 
 });

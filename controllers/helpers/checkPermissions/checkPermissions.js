@@ -15,6 +15,7 @@ const checkPermissions = (req, res, role, userId, cb) => {
   }
 
   if (userId != undefined) {
+    console.log(req.session.user);
     if (normalizeNumberString(req.session.user.role) === 1) {
       // admin has permissions that any user has
       return cb();

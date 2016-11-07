@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const models = require('../models');
-const notProvidedFieldErrorResponse = require('./helpers/notProvidedFieldErrorResponse');
+const notProvidedError = require('./helpers/notProvidedError');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const normalizeNumberString = require('./helpers/normalizeNumberString');
 const checkPermissions = require('./helpers/checkPermissions');
-const handleDBFindErrorAndRespondWithAppropriateJSON = require('./helpers/handleDBFindErrorAndRespondWithAppropriateJSON');
+const handleDBError = require('./helpers/handleDBError');
 
 // GET /parts
 router.get('/', (req, res) => {
@@ -19,7 +19,7 @@ router.get('/', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -33,7 +33,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -50,7 +50,7 @@ router.get('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -66,13 +66,13 @@ router.post('/', (req, res) => {
 
     // check to make sure all required form fields exist
     if (!req.body.number)
-      return notProvidedFieldErrorResponse(res, 'number');
+      return notProvidedError(res, 'number');
     if (!req.body.description)
-      return notProvidedFieldErrorResponse(res, 'description');
+      return notProvidedError(res, 'description');
     if (!req.body.cost)
-      return notProvidedFieldErrorResponse(res, 'cost');
+      return notProvidedError(res, 'cost');
     if (!req.body.image_url)
-      return notProvidedFieldErrorResponse(res, 'image_url');
+      return notProvidedError(res, 'image_url');
 
     const partForm = {
       number: req.body.number,
@@ -89,7 +89,7 @@ router.post('/', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -103,7 +103,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -118,7 +118,7 @@ router.put('/:id', (req, res) => {
         cb2(part);
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -148,7 +148,7 @@ router.put('/:id', (req, res) => {
         });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }
@@ -162,7 +162,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined)
-    return notProvidedFieldErrorResponse(res, 'id');
+    return notProvidedError(res, 'id');
   const id = normalizeStringToInteger(req.params.id);
 
   const cb = () => {
@@ -181,11 +181,11 @@ router.delete('/:id', (req, res) => {
             });
           })
           .catch((err) => {
-            handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+            handleDBError(err, res);
           });
       })
       .catch((err) => {
-        handleDBFindErrorAndRespondWithAppropriateJSON(err, res);
+        handleDBError(err, res);
       });
 
   }

@@ -1,4 +1,4 @@
-const handleDBFindErrorAndRespondWithAppropriateJSON = (err, res) => {
+const handleDBError = (err, res) => {
   console.error(err.stack);
   return res.status(500).json({
     success: false,
@@ -7,4 +7,4 @@ const handleDBFindErrorAndRespondWithAppropriateJSON = (err, res) => {
   });
 }
 
-module.exports = handleDBFindErrorAndRespondWithAppropriateJSON;
+module.exports = handleDBError;
