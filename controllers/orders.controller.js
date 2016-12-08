@@ -134,6 +134,17 @@ const createOrderDetail = (res, orderDetail, cb) => {
     })
 }
 
+const createOrderStatus = (res, orderStatus, cb) => {
+  models.Order_Status
+    .create(orderStatus)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    })
+}
+
 const createPart = (res, part, cb) => {
   models.Part
     .create(part)
@@ -176,13 +187,6 @@ router.post('/', (req, res) => {
   }
 
   const cb2 = (userId) => {
-
-    const successResponse = () => {
-      return res.json({
-        success: true
-      });
-    }
-
     const newOrder = {
       shipping_address: req.body.shipping_address,
       shipping_city: req.body.shipping_city,
@@ -229,7 +233,7 @@ router.post('/', (req, res) => {
                         part_id,
                         OrderId: orderId
                       }
-                    ), successResponse);
+                    ), () => cb3(orderId));
 
                   });
                 } else {
@@ -240,7 +244,7 @@ router.post('/', (req, res) => {
                       part_id: foundPart.id,
                       OrderId: orderId
                     }
-                  ), successResponse);
+                  ), () => cb3(orderId));
 
                 }
               })
@@ -254,6 +258,31 @@ router.post('/', (req, res) => {
       } else {
         successResponse();
       }
+    });
+  }
+
+  const cb3 = (orderId) => {
+
+    models.Status_Type
+      .find({
+        where: { status: 'quote' }
+      })
+      .then((success) => {
+        const orderStatus = {
+          current: true,
+          StatusTypeId: success.id,
+          OrderId: orderId
+        };
+        createOrderStatus(res, orderStatus, successResponse);
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+  }
+
+  const successResponse = () => {
+    return res.json({
+      success: true
     });
   }
 
