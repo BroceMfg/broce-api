@@ -49,7 +49,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 const corsOptions = {
-  origin: 'http://localhost:3000',
+  origin: process.env.CLIENT_ORIGIN,
   credentials: true,
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204 
 };
