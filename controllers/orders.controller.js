@@ -2,6 +2,7 @@ const router = require('express').Router();
 const models = require('../models');
 const notProvidedError = require('./helpers/notProvidedError');
 const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
+const normalizeNumberString = require('./helpers/normalizeNumberString');
 const checkPermissions = require('./helpers/checkPermissions');
 const handleDBError = require('./helpers/handleDBError');
 
@@ -111,6 +112,39 @@ router.get('/', (req, res) => {
 
 });
 
+const createOrder = (res, order, cb) => {
+  models.Order
+    .create(order)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    });
+}
+
+const createOrderDetail = (res, orderDetail, cb) => {
+  models.Order_Detail
+    .create(orderDetail)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    })
+}
+
+const createPart = (res, part, cb) => {
+  models.Part
+    .create(part)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    })
+}
+
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
 
@@ -121,6 +155,7 @@ router.post('/', (req, res) => {
     if (!req.body.shipping_state) return notProvidedError(res, 'shipping_state');
     if (!req.body.shipping_zip) return notProvidedError(res, 'shipping_zip');
     if (!req.body.po_number) return notProvidedError(res, 'po_number');
+    // if (!req.body.user_id) return notProvidedError(res, 'user_id');
 
     // get current user's id
     const userId = process.env.NODE_ENV === 'test' ? 
@@ -128,10 +163,23 @@ router.post('/', (req, res) => {
       normalizeNumberString(req.session.user.id);
 
     // make sure it's a valid userId
+
+    // make sure it's a valid userId
     if (userId == undefined) {
       return res.status(403).json({
         success: false,
         message: 'error: no user data found'
+      });
+    } else {
+      cb2(userId);
+    }
+  }
+
+  const cb2 = (userId) => {
+
+    const successResponse = () => {
+      return res.json({
+        success: true
       });
     }
 
@@ -144,22 +192,69 @@ router.post('/', (req, res) => {
       UserId: userId
     };
 
-    models.Order
-      .create(newOrder)
-      .then((success) => {
-        res.json({
-          success: true
-        });
-      })
-      .catch((err) => {
-        console.log(err.stack);
-        res.status(500).json({
-          success: false,
-          error: process.env.NODE_ENV !== 'production' 
-              ? err.message : 'internal server error'
-        });
-        throw err;
-      });
+    createOrder(res, newOrder, (orderId) => {
+
+      if (req.body.orderDetails) {
+          // req.body.orderDetails will be an array of objects
+          // the objects will be in the form:
+          // {
+          //   machineSerialNum: <>,
+          //   partNum: <>,
+          //   partQty: <>
+          // }
+
+          console.log(JSON.parse(req.body.orderDetails));
+          console.log('got here!');
+          JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
+
+            const number = orderDetail.partNum;
+            models.Part
+              .find({
+                where: {
+                  number
+                }
+              })
+              .then((foundPart) => {
+                const part = { number };
+                const newOrderDetail = {
+                  machine_serial_num: orderDetail.machineSerialNum,
+                  quantity: orderDetail.partQty
+                };
+                if (!foundPart) {
+                  createPart(res, part, (part_id) => {
+
+                    createOrderDetail(res, Object.assign(
+                      newOrderDetail,
+                      {
+                        part_id,
+                        OrderId: orderId
+                      }
+                    ), successResponse);
+
+                  });
+                } else {
+
+                  createOrderDetail(res, Object.assign(
+                    newOrderDetail,
+                    {
+                      part_id: foundPart.id,
+                      OrderId: orderId
+                    }
+                  ), successResponse);
+
+                }
+              })
+              .catch((err) => {
+                handleDBError(err, res)
+              })
+
+            
+          })
+
+      } else {
+        successResponse();
+      }
+    });
   }
 
   // check permission for userRole = 0 means only authenticated users can view
