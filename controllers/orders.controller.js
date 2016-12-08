@@ -265,7 +265,7 @@ router.post('/', (req, res) => {
 
     models.Status_Type
       .find({
-        where: { status: 'quote' }
+        where: { status: req.body.status || 'quote' }
       })
       .then((success) => {
         const orderStatus = {
