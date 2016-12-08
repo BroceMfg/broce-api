@@ -166,14 +166,12 @@ router.post('/', (req, res) => {
     if (!req.body.shipping_state) return notProvidedError(res, 'shipping_state');
     if (!req.body.shipping_zip) return notProvidedError(res, 'shipping_zip');
     if (!req.body.po_number) return notProvidedError(res, 'po_number');
-    // if (!req.body.user_id) return notProvidedError(res, 'user_id');
+    if (!req.body.orderDetails) return notProvidedError(res, 'orderDetails');
 
     // get current user's id
     const userId = process.env.NODE_ENV === 'test' ? 
       require('./helpers/checkPermissions/getUserId.test')(req) : 
       normalizeNumberString(req.session.user.id);
-
-    // make sure it's a valid userId
 
     // make sure it's a valid userId
     if (userId == undefined) {
@@ -207,8 +205,6 @@ router.post('/', (req, res) => {
           //   partQty: <>
           // }
 
-          console.log(JSON.parse(req.body.orderDetails));
-          console.log('got here!');
           JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
 
             const number = orderDetail.partNum;
