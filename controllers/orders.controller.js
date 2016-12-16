@@ -25,6 +25,15 @@ router.use((req, res, next) => {
   next();
 });
 
+const STATUS_TYPE_IDS = {
+  quote: 1,
+  priced: 2,
+  ordered: 3,
+  shipped: 4,
+  archived: 5,
+  abandoned: 6
+};
+
 // get Orders that match the given id(s)
 // res is the standard response obj.
 // ids should be an array, or undefined (for unrestricted findAll)
@@ -77,13 +86,16 @@ const getOrders = (res, ids, cb) => {
 
 // get orderIds that match the given StatusTypeId
 // res is the standard response obj.
-// orderStatusTypeId is the number of the desired StatusTypeId
+// orderStatusTypeId is the number of the desired StatusTypeId(s)
+// orderStatusTypeId can be an array if more than one desired
+// if orderStatusTypeId undefined, then all statusTypes will be found
 // cb is the callback function which will get called with the ids, when complete
 const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
+  const StatusTypeId = (orderStatusTypeId != undefined) ? orderStatusTypeId : { $gte: 0 };
   models.Order_Status
     .findAll({
       where: {
-        StatusTypeId: orderStatusTypeId
+        StatusTypeId
       },
       attributes: ['OrderId']
     })
@@ -99,18 +111,6 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
       handleDBError(err, res)
     });
 }
-
-// GET /orders - ADMIN ONLY
-router.get('/', (req, res) => {
-
-  const cb2 = (orders) => res.json({ orders });
-
-  const cb = () => getOrders(res, undefined, cb2);
-
-  // check permission for userRole = 1 means ADMIN role only
-  checkPermissions(req, res, 1, null, cb);
-
-});
 
 const createOrder = (res, order, cb) => {
   models.Order
@@ -156,6 +156,27 @@ const createPart = (res, part, cb) => {
     })
 }
 
+// ----- end helper functions ----- //
+
+// GET /orders - ADMIN ONLY
+router.get('/', (req, res) => {
+
+  let typeIds;
+  if (req.query.status) {
+    typeIds = req.query.status.split(',').map(statusType => STATUS_TYPE_IDS[statusType]);
+  }
+
+  const cb = () => getOrderIdsForOrderStatusType(res, typeIds, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  // check permission for userRole = 1 means ADMIN role only
+  checkPermissions(req, res, 1, null, cb);
+
+});
+
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
 
@@ -196,64 +217,60 @@ router.post('/', (req, res) => {
 
     createOrder(res, newOrder, (orderId) => {
 
-      if (req.body.orderDetails) {
-          // req.body.orderDetails will be an array of objects
-          // the objects will be in the form:
-          // {
-          //   machineSerialNum: <>,
-          //   partNum: <>,
-          //   partQty: <>
-          // }
+      // req.body.orderDetails will be an array of objects
+      // the objects will be in the form:
+      // {
+      //   machineSerialNum: <>,
+      //   partNum: <>,
+      //   partQty: <>
+      // }
 
-          JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
+      JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
 
-            const number = orderDetail.partNum;
-            models.Part
-              .find({
-                where: {
-                  number
+        const number = orderDetail.partNum;
+        models.Part
+          .find({
+            where: {
+              number
+            }
+          })
+          .then((foundPart) => {
+            const part = { number };
+            const newOrderDetail = {
+              machine_serial_num: orderDetail.machineSerialNum,
+              quantity: orderDetail.partQty
+            };
+            if (!foundPart) {
+              createPart(res, part, (part_id) => {
+
+                createOrderDetail(res, Object.assign(
+                  newOrderDetail,
+                  {
+                    part_id,
+                    OrderId: orderId
+                  }
+                ), () => cb3(orderId));
+
+              });
+            } else {
+
+              createOrderDetail(res, Object.assign(
+                newOrderDetail,
+                {
+                  part_id: foundPart.id,
+                  OrderId: orderId
                 }
-              })
-              .then((foundPart) => {
-                const part = { number };
-                const newOrderDetail = {
-                  machine_serial_num: orderDetail.machineSerialNum,
-                  quantity: orderDetail.partQty
-                };
-                if (!foundPart) {
-                  createPart(res, part, (part_id) => {
+              ), () => cb3(orderId));
 
-                    createOrderDetail(res, Object.assign(
-                      newOrderDetail,
-                      {
-                        part_id,
-                        OrderId: orderId
-                      }
-                    ), () => cb3(orderId));
-
-                  });
-                } else {
-
-                  createOrderDetail(res, Object.assign(
-                    newOrderDetail,
-                    {
-                      part_id: foundPart.id,
-                      OrderId: orderId
-                    }
-                  ), () => cb3(orderId));
-
-                }
-              })
-              .catch((err) => {
-                handleDBError(err, res)
-              })
-
-            
+            }
+          })
+          .catch((err) => {
+            handleDBError(err, res)
           })
 
-      } else {
-        successResponse();
-      }
+        
+      })
+
     });
   }
 
