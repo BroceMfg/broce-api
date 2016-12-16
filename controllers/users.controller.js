@@ -52,6 +52,28 @@ router.post('/login', (req, res) => {
 
 });
 
+router.post('/logout', (req, res) => {
+
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(500).json({
+          success: false,
+          error: 'Internal Server Error'
+        });
+      } else {
+        res.json({ success: true });
+      }
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      error: 'User Not Found'
+    });
+  }
+
+})
+
 // GET /users - ADMIN ONLY
 router.get('/', (req, res) => {
 
