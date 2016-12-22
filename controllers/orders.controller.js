@@ -25,17 +25,30 @@ router.use((req, res, next) => {
   next();
 });
 
+const STATUS_TYPE_IDS = {
+  quote: 1,
+  priced: 2,
+  ordered: 3,
+  shipped: 4,
+  archived: 5,
+  abandoned: 6
+};
+
 // get Orders that match the given id(s)
 // res is the standard response obj.
 // ids should be an array, or undefined (for unrestricted findAll)
 // cb is the callback function which will get called with the orders, when complete
-const getOrders = (res, ids, cb) => {
-  const id = (ids != undefined) ? ids 
-    : { $gte: 0 };
+const getOrders = (res, ids, userId, cb) => {
+  const id = (ids != undefined) ? ids : { $gte: 0 };
+  // if userId = 'ADMIN', the user is an admin, thus return all orders
+  // elseif userId exists, use it to query for that user's orders
+  // else query for lt 0 (i.e. nothing), because an error has occurred if userId is undefined
+  const UserId = (userId != undefined) ? ((userId !== 'ADMIN') ? userId : { $gte: 0 }) : { $lt: 0 };
   models.Order
     .findAll({
       where: {
-        id
+        id,
+        UserId
       },
       include: [{
         model: models.Order_Detail,
@@ -77,13 +90,16 @@ const getOrders = (res, ids, cb) => {
 
 // get orderIds that match the given StatusTypeId
 // res is the standard response obj.
-// orderStatusTypeId is the number of the desired StatusTypeId
+// orderStatusTypeId is the number of the desired StatusTypeId(s)
+// orderStatusTypeId can be an array if more than one desired
+// if orderStatusTypeId undefined, then all statusTypes will be found
 // cb is the callback function which will get called with the ids, when complete
 const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
+  const StatusTypeId = (orderStatusTypeId != undefined) ? orderStatusTypeId : { $gte: 0 };
   models.Order_Status
     .findAll({
       where: {
-        StatusTypeId: orderStatusTypeId
+        StatusTypeId
       },
       attributes: ['OrderId']
     })
@@ -99,18 +115,6 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
       handleDBError(err, res)
     });
 }
-
-// GET /orders - ADMIN ONLY
-router.get('/', (req, res) => {
-
-  const cb2 = (orders) => res.json({ orders });
-
-  const cb = () => getOrders(res, undefined, cb2);
-
-  // check permission for userRole = 1 means ADMIN role only
-  checkPermissions(req, res, 1, null, cb);
-
-});
 
 const createOrder = (res, order, cb) => {
   models.Order
@@ -156,6 +160,36 @@ const createPart = (res, part, cb) => {
     })
 }
 
+// ----- end helper functions ----- //
+
+// GET /orders - ADMIN ONLY
+router.get('/', (req, res) => {
+
+  let typeIds;
+  if (req.query.status) {
+    typeIds = req.query.status.split(',').map(statusType => STATUS_TYPE_IDS[statusType]);
+  }
+
+  let userId;
+  const cb = () => getOrderIdsForOrderStatusType(res, typeIds, cb2);
+
+  const cb2 = (ids) => getOrders(res, ids, userId, cb3);
+
+  const cb3 = (orders) => res.json({ orders });
+
+  console.log(req.session.user);
+
+  // check permission for userRole = 1 means ADMIN role only
+  if (req.session.user.role === 1) {
+    userId = 'ADMIN';
+    checkPermissions(req, res, 1, null, cb);
+  } else {
+    userId = req.session.user.id;
+    checkPermissions(req, res, 0, null, cb);
+  }
+
+});
+
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
 
@@ -196,64 +230,60 @@ router.post('/', (req, res) => {
 
     createOrder(res, newOrder, (orderId) => {
 
-      if (req.body.orderDetails) {
-          // req.body.orderDetails will be an array of objects
-          // the objects will be in the form:
-          // {
-          //   machineSerialNum: <>,
-          //   partNum: <>,
-          //   partQty: <>
-          // }
+      // req.body.orderDetails will be an array of objects
+      // the objects will be in the form:
+      // {
+      //   machineSerialNum: <>,
+      //   partNum: <>,
+      //   partQty: <>
+      // }
 
-          JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
+      JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
 
-            const number = orderDetail.partNum;
-            models.Part
-              .find({
-                where: {
-                  number
+        const number = orderDetail.partNum;
+        models.Part
+          .find({
+            where: {
+              number
+            }
+          })
+          .then((foundPart) => {
+            const part = { number };
+            const newOrderDetail = {
+              machine_serial_num: orderDetail.machineSerialNum,
+              quantity: orderDetail.partQty
+            };
+            if (!foundPart) {
+              createPart(res, part, (part_id) => {
+
+                createOrderDetail(res, Object.assign(
+                  newOrderDetail,
+                  {
+                    part_id,
+                    OrderId: orderId
+                  }
+                ), () => cb3(orderId));
+
+              });
+            } else {
+
+              createOrderDetail(res, Object.assign(
+                newOrderDetail,
+                {
+                  part_id: foundPart.id,
+                  OrderId: orderId
                 }
-              })
-              .then((foundPart) => {
-                const part = { number };
-                const newOrderDetail = {
-                  machine_serial_num: orderDetail.machineSerialNum,
-                  quantity: orderDetail.partQty
-                };
-                if (!foundPart) {
-                  createPart(res, part, (part_id) => {
+              ), () => cb3(orderId));
 
-                    createOrderDetail(res, Object.assign(
-                      newOrderDetail,
-                      {
-                        part_id,
-                        OrderId: orderId
-                      }
-                    ), () => cb3(orderId));
-
-                  });
-                } else {
-
-                  createOrderDetail(res, Object.assign(
-                    newOrderDetail,
-                    {
-                      part_id: foundPart.id,
-                      OrderId: orderId
-                    }
-                  ), () => cb3(orderId));
-
-                }
-              })
-              .catch((err) => {
-                handleDBError(err, res)
-              })
-
-            
+            }
+          })
+          .catch((err) => {
+            handleDBError(err, res)
           })
 
-      } else {
-        successResponse();
-      }
+        
+      })
+
     });
   }
 
@@ -293,7 +323,7 @@ router.get('/quoted', (req, res) => {
   // StatusTypeId = 1 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 1, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -308,7 +338,7 @@ router.get('/priced', (req, res) => {
   // StatusTypeId = 2 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 2, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -323,7 +353,7 @@ router.get('/ordered', (req, res) => {
   // StatusTypeId = 3 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 3, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -338,7 +368,7 @@ router.get('/shipped', (req, res) => {
   // StatusTypeId = 4 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 4, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -353,7 +383,7 @@ router.get('/archived', (req, res) => {
   // StatusTypeId = 5 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 5, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -368,7 +398,7 @@ router.get('/abandoned', (req, res) => {
   // StatusTypeId = 6 for priced
   const cb = () => getOrderIdsForOrderStatusType(res, 6, cb2);
 
-  const cb2 = (ids) => getOrders(res, ids, cb3);
+  const cb2 = (ids) => getOrders(res, ids, 'ADMIN', cb3);
 
   const cb3 = (orders) => res.json({ orders });
 
@@ -401,7 +431,7 @@ router.get('/:id', (req, res) => {
     });
   }
 
-  getOrders(res, [id], cb);
+  getOrders(res, [id], 'ADMIN', cb);
 
 });
 
