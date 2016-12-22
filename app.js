@@ -21,6 +21,7 @@ let sess = {
   store: new RedisStore(redisOptions),
   secret: process.env.SESSION_SECRET,
   resave: false,
+  unset: 'destroy',
   cookie: {
     expires: new Date(Date.now() + 3600000), // expires in one hour
     maxAge: 3600000
