@@ -52,36 +52,11 @@ const getOrders = (res, ids, userId, cb) => {
       },
       include: [{
         model: models.Order_Detail,
-        attributes: [
-          'id',
-          'machine_serial_num',
-          'quantity',
-          'price',
-          'createdAt',
-          'updatedAt',
-          'ShippingOptionId',
-          'ShippingDetailId'
-        ],
         include: [{
-          model: models.Part,
-          attributes: [
-            'id',
-            'number',
-            'description',
-            'cost',
-            'image_url',
-            'createdAt',
-            'updatedAt'
-          ]
+          model: models.Part
         }]
       }, {
-        model: models.Order_Status,
-        attributes: [
-          'current',
-          'createdAt',
-          'updatedAt',
-          'StatusTypeId'
-        ]
+        model: models.Order_Status
       }]
   })
   .then((orders) => {
