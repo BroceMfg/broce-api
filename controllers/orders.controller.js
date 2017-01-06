@@ -527,9 +527,6 @@ router.delete('/:id', (req, res) => {
 });
 
 // PUT /orders/{orderId}/status?type={statusType}
-// TODO: should check if the requested status promotion is allowed
-// i.e. the system shouldn't allow a "quote" Order to be promoted to "shipped"
-// "quote" should only be allowed to be promoted to "priced"
 router.put('/:id/status', (req, res) => {
 
   if (req.params == undefined || req.params.id == undefined) {
@@ -544,14 +541,52 @@ router.put('/:id/status', (req, res) => {
     statusTypeId = STATUS_TYPE_IDS[req.body.type];
   }
 
+  const checkIfPromotionIsAllowed = (cb) => {
+    // check if the requested status type promotion is allowed
+    // exception for promoting to abandoned or archived
+    if ([5,6].indexOf(statusTypeId) > -1) {
+      cb();
+    } else {
+      models.Order_Status
+        .findAll({
+          where: {
+            OrderId: id,
+            current: true
+          }
+        })
+        .then((orderStatuses) => {
+          if (orderStatuses) {
+            const currentStatusTypeId = orderStatuses
+              .sort((a, b) => {
+                return (a.StatusTypeId || 0) < (b.StatusTypeId || 0);
+              })[0].StatusTypeId || 0;
+            if (currentStatusTypeId + 1 === statusTypeId) {
+              cb();
+            } else {
+              const message = 'The requested status type promotion is not allowed';
+              internalServerError(res, message);
+            }
+          } else {
+            internalServerError(res);
+          }
+        })
+        .catch((err) => {
+          handleDBError(err, res);
+        });
+      }
+  }
+
   const clearOldOrderStatusRecords = (cb) => {
-    // set all old Order_Statuses to current=false
+    // set current Order_Status to current=false
     models.Order_Status
       .update({
           current: false
         }, {
-        where: { OrderId: id },
-        fields: ['current']
+        where: {
+          OrderId: id
+        },
+        fields: ['current'],
+        returning: true
       })
       .then((success) => {
         cb();
@@ -562,23 +597,25 @@ router.put('/:id/status', (req, res) => {
   }
 
   const cb = () => {
-    clearOldOrderStatusRecords(() => {
+    checkIfPromotionIsAllowed(() => {
       // success cb
+      clearOldOrderStatusRecords(() => {
+        // success cb
 
-      const orderStatus = {
-        current: true,
-        StatusTypeId: statusTypeId,
-        OrderId: id
-      };
+        const orderStatus = {
+          current: true,
+          StatusTypeId: statusTypeId,
+          OrderId: id
+        };
 
-      createOrderStatus(res, orderStatus, () => {
-        res.json({
-          success: true
+        createOrderStatus(res, orderStatus, () => {
+          res.json({
+            success: true
+          });
         });
+
       });
-
-    });
-
+    })
   }
 
   const checkOrderIdPermissions = (cb) => {

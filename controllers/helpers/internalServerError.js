@@ -1,7 +1,7 @@
-const internalServerError = (res) => {
+const internalServerError = (res, message) => {
   return res.status(500).json({
     success: false,
-    message: 'error: internal server error'
+    message: message || 'error: internal server error'
   });
 }
 
