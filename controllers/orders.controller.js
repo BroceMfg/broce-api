@@ -5,6 +5,7 @@ const normalizeStringToInteger = require('./helpers/normalizeStringToInteger');
 const normalizeNumberString = require('./helpers/normalizeNumberString');
 const checkPermissions = require('./helpers/checkPermissions');
 const handleDBError = require('./helpers/handleDBError');
+const internalServerError = require('./helpers/internalServerError');
 
 // ----- helper functions ----- //
 
@@ -25,6 +26,11 @@ router.use((req, res, next) => {
   next();
 });
 
+const PERMISSION_IDS = {
+  client: 0,
+  admin: 1
+};
+
 const STATUS_TYPE_IDS = {
   quote: 1,
   priced: 2,
@@ -32,6 +38,15 @@ const STATUS_TYPE_IDS = {
   shipped: 4,
   archived: 5,
   abandoned: 6
+};
+
+const STATUS_TYPE_IDS_PERMISSIONS = {
+  1: 'client',
+  2: 'admin',
+  3: 'client',
+  4: 'admin',
+  5: 'admin',
+  6: 'client'
 };
 
 // get Orders that match the given id(s)
@@ -52,32 +67,11 @@ const getOrders = (res, ids, userId, cb) => {
       },
       include: [{
         model: models.Order_Detail,
-        attributes: [
-          'machine_serial_num',
-          'quantity',
-          'price',
-          'createdAt',
-          'updatedAt'
-        ],
         include: [{
-          model: models.Part,
-          attributes: [
-            'number',
-            'description',
-            'cost',
-            'image_url',
-            'createdAt',
-            'updatedAt'
-          ]
+          model: models.Part
         }]
       }, {
-        model: models.Order_Status,
-        attributes: [
-          'current',
-          'createdAt',
-          'updatedAt',
-          'StatusTypeId'
-        ]
+        model: models.Order_Status
       }]
   })
   .then((orders) => {
@@ -529,6 +523,169 @@ router.delete('/:id', (req, res) => {
     .catch((err) => {
       handleDBError(err, res);
     });
+
+});
+
+// PUT /orders/{orderId}/status?type={statusType}
+router.put('/:id/status', (req, res) => {
+
+  if (req.params == undefined || req.params.id == undefined) {
+    return notProvidedError(res, 'orderId');
+  }
+  const id = normalizeStringToInteger(req.params.id);
+
+  let statusTypeId;
+  if (req.query.type) {
+    statusTypeId = STATUS_TYPE_IDS[req.query.type];
+  } else if (req.body.type) {
+    statusTypeId = STATUS_TYPE_IDS[req.body.type];
+  }
+
+  const checkIfPromotionIsAllowed = (cb) => {
+    // check if the requested status type promotion is allowed
+    // exception for promoting to abandoned or archived
+    if ([5,6].indexOf(statusTypeId) > -1) {
+      cb();
+    } else {
+      models.Order_Status
+        .findAll({
+          where: {
+            OrderId: id,
+            current: true
+          }
+        })
+        .then((orderStatuses) => {
+          if (orderStatuses) {
+            const currentStatusTypeId = orderStatuses
+              .sort((a, b) => {
+                return (a.StatusTypeId || 0) < (b.StatusTypeId || 0);
+              })[0].StatusTypeId || 0;
+            if (currentStatusTypeId + 1 === statusTypeId) {
+              cb();
+            } else {
+              const message = 'The requested status type promotion is not allowed';
+              internalServerError(res, message);
+            }
+          } else {
+            internalServerError(res);
+          }
+        })
+        .catch((err) => {
+          handleDBError(err, res);
+        });
+      }
+  }
+
+  const clearOldOrderStatusRecords = (cb) => {
+    // set current Order_Status to current=false
+    models.Order_Status
+      .update({
+          current: false
+        }, {
+        where: {
+          OrderId: id
+        },
+        fields: ['current'],
+        returning: true
+      })
+      .then((success) => {
+        cb();
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+  }
+
+  const cb = () => {
+    checkIfPromotionIsAllowed(() => {
+      // success cb
+      clearOldOrderStatusRecords(() => {
+        // success cb
+
+        const orderStatus = {
+          current: true,
+          StatusTypeId: statusTypeId,
+          OrderId: id
+        };
+
+        createOrderStatus(res, orderStatus, () => {
+          res.json({
+            success: true
+          });
+        });
+
+      });
+    })
+  }
+
+  const checkOrderIdPermissions = (cb) => {
+    models.Order
+      .findOne({
+        where: { id }
+      })
+      .then((order) => {
+        checkPermissions(req, res, null, order.UserId, cb);
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      })
+  }
+
+  if (statusTypeId !== undefined) {
+
+    const permissionRole = STATUS_TYPE_IDS_PERMISSIONS[statusTypeId];
+    if (permissionRole) {
+
+      checkOrderIdPermissions(() => {
+        // NOTE: admin users can also do things as a "client" here
+        // this is because checkPermissions will grant client access to clients or admins
+        checkPermissions(req, res, PERMISSION_IDS[permissionRole], null, cb);
+      });
+
+    } else {
+      internalServerError(res);
+    }
+
+  } else {
+    notProvidedError(res, 'valid status type');
+  }
+
+});
+
+// PUT /orders/detail/{detailId}
+router.put('/details/:detailId', (req, res) => {
+  
+  const allowedFields = ['quantity', 'price', 'ShippingOptionId', 'ShippingDetailId'];
+
+  const cb = () => {
+
+    const b = req.body;
+    
+    let detailObj = {};
+    Object.keys(b)
+      .filter((field) => allowedFields.indexOf(field) > -1)
+      .forEach((key) => {
+        detailObj[key] = b[key];
+      });
+    
+    const id = normalizeStringToInteger(req.params.detailId);
+
+    models.Order_Detail
+      .update(detailObj, {
+        where: { id }
+      })
+      .then((success) => {
+        res.json({
+          success: true
+        });
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+
+  }
+
+  checkPermissions(req, res, 1, null, cb);
 
 });
 
