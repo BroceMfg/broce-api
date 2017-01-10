@@ -110,6 +110,119 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
     });
 }
 
+const promoteOrderStatus = (req, res, id, statusType) => {
+  let statusTypeId = STATUS_TYPE_IDS[statusType];
+
+  const checkIfPromotionIsAllowed = (cb) => {
+    // check if the requested status type promotion is allowed
+    // exception for promoting to abandoned or archived
+    if ([5,6].indexOf(statusTypeId) > -1) {
+      cb();
+    } else {
+      models.Order_Status
+        .findAll({
+          where: {
+            OrderId: id,
+            current: true
+          }
+        })
+        .then((orderStatuses) => {
+          if (orderStatuses) {
+            const currentStatusTypeId = orderStatuses
+              .sort((a, b) => {
+                return (a.StatusTypeId || 0) < (b.StatusTypeId || 0);
+              })[0].StatusTypeId || 0;
+            if (currentStatusTypeId + 1 === statusTypeId) {
+              cb();
+            } else {
+              const message = 'The requested status type promotion is not allowed';
+              internalServerError(res, message);
+            }
+          } else {
+            internalServerError(res);
+          }
+        })
+        .catch((err) => {
+          handleDBError(err, res);
+        });
+      }
+  }
+
+  const clearOldOrderStatusRecords = (cb) => {
+    // set current Order_Status to current=false
+    models.Order_Status
+      .update({
+          current: false
+        }, {
+        where: {
+          OrderId: id
+        },
+        fields: ['current'],
+        returning: true
+      })
+      .then((success) => {
+        cb();
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+  }
+
+  const cb = () => {
+    checkIfPromotionIsAllowed(() => {
+      // success cb
+      clearOldOrderStatusRecords(() => {
+        // success cb
+
+        const orderStatus = {
+          current: true,
+          StatusTypeId: statusTypeId,
+          OrderId: id
+        };
+
+        createOrderStatus(res, orderStatus, () => {
+          res.json({
+            success: true
+          });
+        });
+
+      });
+    })
+  }
+
+  const checkOrderIdPermissions = (cb) => {
+    models.Order
+      .findOne({
+        where: { id }
+      })
+      .then((order) => {
+        checkPermissions(req, res, null, order.UserId, cb);
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      })
+  }
+
+  if (statusTypeId !== undefined) {
+
+    const permissionRole = STATUS_TYPE_IDS_PERMISSIONS[statusTypeId];
+    if (permissionRole) {
+
+      checkOrderIdPermissions(() => {
+        // NOTE: admin users can also do things as a "client" here
+        // this is because checkPermissions will grant client access to clients or admins
+        checkPermissions(req, res, PERMISSION_IDS[permissionRole], null, cb);
+      });
+
+    } else {
+      internalServerError(res);
+    }
+
+  } else {
+    notProvidedError(res, 'valid status type');
+  }
+}
+
 const createOrder = (res, order, cb) => {
   models.Order
     .create(order)
@@ -146,6 +259,17 @@ const createOrderStatus = (res, orderStatus, cb) => {
 const createPart = (res, part, cb) => {
   models.Part
     .create(part)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    })
+}
+
+const createShippingAddress = (res, address, cb) => {
+  models.Shipping_Address
+    .create(address)
     .then((success) => {
       cb(success.id);
     })
@@ -534,125 +658,22 @@ router.put('/:id/status', (req, res) => {
   }
   const id = normalizeStringToInteger(req.params.id);
 
-  let statusTypeId;
-  if (req.query.type) {
-    statusTypeId = STATUS_TYPE_IDS[req.query.type];
-  } else if (req.body.type) {
-    statusTypeId = STATUS_TYPE_IDS[req.body.type];
-  }
-
-  const checkIfPromotionIsAllowed = (cb) => {
-    // check if the requested status type promotion is allowed
-    // exception for promoting to abandoned or archived
-    if ([5,6].indexOf(statusTypeId) > -1) {
-      cb();
+  let statusType;
+  if (!req.query || !req.query.type) {
+    if (!req.body || !req.body.type) {
+      return notProvidedError(res, 'type');
     } else {
-      models.Order_Status
-        .findAll({
-          where: {
-            OrderId: id,
-            current: true
-          }
-        })
-        .then((orderStatuses) => {
-          if (orderStatuses) {
-            const currentStatusTypeId = orderStatuses
-              .sort((a, b) => {
-                return (a.StatusTypeId || 0) < (b.StatusTypeId || 0);
-              })[0].StatusTypeId || 0;
-            if (currentStatusTypeId + 1 === statusTypeId) {
-              cb();
-            } else {
-              const message = 'The requested status type promotion is not allowed';
-              internalServerError(res, message);
-            }
-          } else {
-            internalServerError(res);
-          }
-        })
-        .catch((err) => {
-          handleDBError(err, res);
-        });
-      }
-  }
-
-  const clearOldOrderStatusRecords = (cb) => {
-    // set current Order_Status to current=false
-    models.Order_Status
-      .update({
-          current: false
-        }, {
-        where: {
-          OrderId: id
-        },
-        fields: ['current'],
-        returning: true
-      })
-      .then((success) => {
-        cb();
-      })
-      .catch((err) => {
-        handleDBError(err, res);
-      });
-  }
-
-  const cb = () => {
-    checkIfPromotionIsAllowed(() => {
-      // success cb
-      clearOldOrderStatusRecords(() => {
-        // success cb
-
-        const orderStatus = {
-          current: true,
-          StatusTypeId: statusTypeId,
-          OrderId: id
-        };
-
-        createOrderStatus(res, orderStatus, () => {
-          res.json({
-            success: true
-          });
-        });
-
-      });
-    })
-  }
-
-  const checkOrderIdPermissions = (cb) => {
-    models.Order
-      .findOne({
-        where: { id }
-      })
-      .then((order) => {
-        checkPermissions(req, res, null, order.UserId, cb);
-      })
-      .catch((err) => {
-        handleDBError(err, res);
-      })
-  }
-
-  if (statusTypeId !== undefined) {
-
-    const permissionRole = STATUS_TYPE_IDS_PERMISSIONS[statusTypeId];
-    if (permissionRole) {
-
-      checkOrderIdPermissions(() => {
-        // NOTE: admin users can also do things as a "client" here
-        // this is because checkPermissions will grant client access to clients or admins
-        checkPermissions(req, res, PERMISSION_IDS[permissionRole], null, cb);
-      });
-
-    } else {
-      internalServerError(res);
+      statusType = req.body.type;
     }
-
   } else {
-    notProvidedError(res, 'valid status type');
+    statusType = req.query.type;
   }
+
+  promoteOrderStatus(req, res, req.params.id, statusType);
 
 });
 
-// PUT /orders/detail/{detailId}
+// PUT /orders/details/{detailId}
 router.put('/details/:detailId', (req, res) => {
   
   const allowedFields = ['quantity', 'price', 'ShippingOptionId', 'ShippingDetailId'];
@@ -686,6 +707,109 @@ router.put('/details/:detailId', (req, res) => {
   }
 
   checkPermissions(req, res, 1, null, cb);
+
+});
+
+// POST /orders/details/{detailIds}/shippingaddress?statusType={statusType}
+router.post('/details/:detailIds/shippingaddress', (req, res) => {
+
+  if (req.params === undefined || req.params.detailIds === undefined) {
+    return notProvidedError(res, 'detailIds');
+  }
+
+  if (!req.body.street) return notProvidedError(res, 'street');
+  if (!req.body.city) return notProvidedError(res, 'city');
+  if (!req.body.state) return notProvidedError(res, 'state');
+
+  const cb2 = (id) => {
+
+    const newOrderDetail = {
+      ShippingAddressId: id
+    };
+
+    models.Order_Detail
+      .update(newOrderDetail, {
+        where: {
+          id: req.params.detailIds.split(',')
+        },
+        fields: ['ShippingAddressId'],
+        returning: true
+      })
+      .then((success) => {
+        let orderId;
+        if (success[1] && success[1][0]) {
+          orderId = success[1][0].OrderId;
+        }
+
+        if (req.query && req.query.statusType) {
+          if (orderId) {
+            const statusType = req.query.statusType;
+            promoteOrderStatus(req, res, orderId, statusType);
+          } else {
+            internalServerError(res);
+          }
+
+        } else {
+          res.json({
+            success: true
+          });
+        }
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+
+  }
+
+  const cb = () => {
+    const address = {
+      street: req.body.street,
+      city: req.body.city,
+      state: req.body.state,
+      zip: req.body.zip || null,
+      po_number: req.body.po_number || null,
+      UserId: req.session.user.id
+    };
+
+    createShippingAddress(res, address, cb2);
+  }
+
+  models.Order_Detail
+    .findAll({
+      where: {
+        id: req.params.detailIds.split(',')
+      },
+      attributes: ['OrderId'],
+      include: [{
+        model: models.Order,
+        attributes: ['UserId'],
+        include: [{
+          model: models.User,
+          attributes: ['id']
+        }],
+      }]
+    })
+    .then((success) => {
+      // handle success
+      const userIds = success.map((item) => item.Order.User.id).reduce((a, b) => {
+        if (a.indexOf(b) < 0) {
+          a.push(b);
+        }
+        return a;
+      }, []);
+
+      if (userIds.length < 1 || userIds.length > 1) {
+        // something must have went wrong on the client side for us to get here...
+        internalServerError(res);
+      }
+
+      // check that user is authorized to do this under this UserID
+      checkPermissions(req, res, null, userIds[0], cb);
+
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    });
 
 });
 
