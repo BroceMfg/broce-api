@@ -801,11 +801,11 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       if (userIds.length < 1 || userIds.length > 1) {
         // something must have went wrong on the client side for us to get here...
         internalServerError(res);
+      } else {
+        // check that user is authorized to do this under this UserID
+        checkPermissions(req, res, null, userIds[0], cb);
       }
-
-      // check that user is authorized to do this under this UserID
-      checkPermissions(req, res, null, userIds[0], cb);
-
+      
     })
     .catch((err) => {
       handleDBError(err, res);
