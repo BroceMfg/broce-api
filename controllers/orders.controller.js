@@ -803,9 +803,13 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
         internalServerError(res);
       } else {
         // check that user is authorized to do this under this UserID
+        
+        // TODO: make sure this is actually working...
+        // I think it's currently broken
+        
         checkPermissions(req, res, null, userIds[0], cb);
       }
-      
+
     })
     .catch((err) => {
       handleDBError(err, res);
