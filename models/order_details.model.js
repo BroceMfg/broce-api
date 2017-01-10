@@ -26,6 +26,7 @@ module.exports = (sequelize, DataTypes) => {
           // Order_Detail.hasOne(models.Quote_Detail);
           Order_Detail.belongsTo(models.Shipping_Option, {constraints: false});
           Order_Detail.belongsTo(models.Shipping_Detail, {constraints: false});
+          Order_Detail.belongsTo(models.Shipping_Address, {constraints: false});
         }
       }
     }, {
