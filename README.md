@@ -1,7 +1,7 @@
 # broce-api  
 Node.js + Express backend API for handling the Broce Mfg. parts ordering system.
 
-[Client App](https://github.com/BroceMfg/broce-client)
+### Our Client App can be found [here](https://github.com/BroceMfg/broce-client)
 
 includes:
 
