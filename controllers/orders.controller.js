@@ -711,24 +711,19 @@ router.put('/details/:detailId', (req, res) => {
 });
 
 // POST /orders/details/{detailIds}/shippingaddress?statusType={statusType}
+// e.g.: /orders/details/73,74,75/shippingaddress?statusType=ordered
 router.post('/details/:detailIds/shippingaddress', (req, res) => {
-
+  // make sure req.params.detailIds exists before going any further
   if (req.params === undefined || req.params.detailIds === undefined) {
     return notProvidedError(res, 'detailIds');
   }
 
-  if (!req.body.street) return notProvidedError(res, 'street');
-  if (!req.body.city) return notProvidedError(res, 'city');
-  if (!req.body.state) return notProvidedError(res, 'state');
-
-  const cb2 = (id) => {
-
-    const newOrderDetail = {
-      ShippingAddressId: id
-    };
-
+  const cb2 = (ShippingAddressId) => {
+    // add our newly created ShippingAddress' id to the orderDetails
     models.Order_Detail
-      .update(newOrderDetail, {
+      .update({
+          ShippingAddressId
+        }, {
         where: {
           id: req.params.detailIds.split(',')
         },
@@ -737,6 +732,10 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       })
       .then((success) => {
         let orderId;
+        // parse the success array for an orderId
+        // success[1] is an array of objects that were updated
+        // because we know all of these orderDetails will have
+        // the same OrderId, we can just look at the 0th one
         if (success[1] && success[1][0]) {
           orderId = success[1][0].OrderId;
         }
@@ -758,10 +757,13 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       .catch((err) => {
         handleDBError(err, res);
       });
-
   }
 
   const cb = () => {
+    if (!req.body.street) return notProvidedError(res, 'street');
+    if (!req.body.city) return notProvidedError(res, 'city');
+    if (!req.body.state) return notProvidedError(res, 'state');
+
     const address = {
       street: req.body.street,
       city: req.body.city,
@@ -790,31 +792,30 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       }]
     })
     .then((success) => {
-      // handle success
-      const userIds = success.map((item) => item.Order.User.id).reduce((a, b) => {
-        if (a.indexOf(b) < 0) {
-          a.push(b);
-        }
-        return a;
-      }, []);
+      // find the userId(s) mapped to the orderDetail ids in the request
+      const userIds = success
+        .map((item) => item.Order.User.id).reduce((a, b) => {
+          if (a.indexOf(b) < 0) {
+            a.push(b);
+          }
+          return a;
+        }, []);
 
+      // if userIds !== 1, then something went wrong
       if (userIds.length < 1 || userIds.length > 1) {
-        // something must have went wrong on the client side for us to get here...
+        // something must have went wrong on the client if we received
+        // a request with orderDetails that map to different orders
+        // i.e. orderDetails that map to multiple userIds
         internalServerError(res);
       } else {
-        // check that user is authorized to do this under this UserID
-        
-        // TODO: make sure this is actually working...
-        // I think it's currently broken
-        
+        // successfully found a userId, now check if the current 
+        // user is authorized to do this under the found userId 
         checkPermissions(req, res, null, userIds[0], cb);
       }
-
     })
     .catch((err) => {
       handleDBError(err, res);
     });
-
 });
 
 module.exports = router;
