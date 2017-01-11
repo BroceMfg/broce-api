@@ -223,6 +223,30 @@ const promoteOrderStatus = (req, res, id, statusType) => {
   }
 }
 
+const promoteIfStatusType = (req, res, successObj) => {
+  let orderId;
+  // parse the successObj array for an orderId
+  // successObj[1] is an array of objects that were updated
+  // because we know all of these orderDetails will have
+  // the same OrderId, we can just look at the 0th one
+  if (successObj[1] && successObj[1][0]) {
+    orderId = successObj[1][0].OrderId;
+  }
+
+  if (req.query && req.query.statusType) {
+    if (orderId) {
+      const statusType = req.query.statusType;
+      promoteOrderStatus(req, res, orderId, statusType);
+    } else {
+      internalServerError(res);
+    }
+  } else {
+    res.json({
+      success: true
+    });
+  }
+}
+
 const createOrder = (res, order, cb) => {
   models.Order
     .create(order)
@@ -270,6 +294,17 @@ const createPart = (res, part, cb) => {
 const createShippingAddress = (res, address, cb) => {
   models.Shipping_Address
     .create(address)
+    .then((success) => {
+      cb(success.id);
+    })
+    .catch((err) => {
+      handleDBError(err, res);
+    })
+}
+
+const createShippingDetail = (res, shippingDetail, cb) => {
+  models.Shipping_Detail
+    .create(shippingDetail)
     .then((success) => {
       cb(success.id);
     })
@@ -673,41 +708,51 @@ router.put('/:id/status', (req, res) => {
 
 });
 
-// PUT /orders/details/{detailId}
-router.put('/details/:detailId', (req, res) => {
-  
-  const allowedFields = ['quantity', 'price', 'ShippingOptionId', 'ShippingDetailId'];
+// PUT /orders/details/{detailId(s)}?statusType={statusType}
+// e.g.: /orders/details/73,74,75?statusType=shipped
+router.put('/details/:detailIds', (req, res) => {
+  const b = req.body;
 
   const cb = () => {
+    if (b && (b.tracking_number || b.cost)) {
+      const shippingDetail = {
+        tracking_number: b.tracking_number || null,
+        cost: b.cost || null
+      };
+      createShippingDetail(res, shippingDetail, cb2);
+    } else cb2();
+  }
 
-    const b = req.body;
-    
-    let detailObj = {};
+  // ShippingDetailId is optional. If used, will be defined in cb (above)
+  const cb2 = (ShippingDetailId) => {
+    const allowedFields = ['quantity', 'price', 'ShippingOptionId', 'ShippingDetailId'];
+
+    let detailObj = { ShippingDetailId };
     Object.keys(b)
       .filter((field) => allowedFields.indexOf(field) > -1)
       .forEach((key) => {
         detailObj[key] = b[key];
       });
     
-    const id = normalizeStringToInteger(req.params.detailId);
+    const detailIds = req.params.detailIds.split(',');
 
     models.Order_Detail
       .update(detailObj, {
-        where: { id }
+        where: {
+          id: detailIds
+        },
+        returning: true
       })
       .then((success) => {
-        res.json({
-          success: true
-        });
+        promoteIfStatusType(req, res, success);
       })
       .catch((err) => {
         handleDBError(err, res);
       });
-
   }
 
+  // admin only
   checkPermissions(req, res, 1, null, cb);
-
 });
 
 // POST /orders/details/{detailIds}/shippingaddress?statusType={statusType}
@@ -731,28 +776,7 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
         returning: true
       })
       .then((success) => {
-        let orderId;
-        // parse the success array for an orderId
-        // success[1] is an array of objects that were updated
-        // because we know all of these orderDetails will have
-        // the same OrderId, we can just look at the 0th one
-        if (success[1] && success[1][0]) {
-          orderId = success[1][0].OrderId;
-        }
-
-        if (req.query && req.query.statusType) {
-          if (orderId) {
-            const statusType = req.query.statusType;
-            promoteOrderStatus(req, res, orderId, statusType);
-          } else {
-            internalServerError(res);
-          }
-
-        } else {
-          res.json({
-            success: true
-          });
-        }
+        promoteIfStatusType(req, res, success);
       })
       .catch((err) => {
         handleDBError(err, res);
