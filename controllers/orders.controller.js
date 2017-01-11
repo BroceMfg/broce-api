@@ -69,6 +69,8 @@ const getOrders = (res, ids, userId, cb) => {
         model: models.Order_Detail,
         include: [{
           model: models.Part
+        }, {
+          model: models.Shipping_Detail
         }]
       }, {
         model: models.Order_Status
