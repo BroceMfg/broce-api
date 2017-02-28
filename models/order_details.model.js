@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
     var Order_Detail = sequelize.define('Order_Detail', {
         machine_serial_num: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         part_id: {
           type: DataTypes.INTEGER,
