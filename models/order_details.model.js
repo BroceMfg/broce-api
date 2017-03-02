@@ -3,7 +3,7 @@
 module.exports = (sequelize, DataTypes) => {
     var Order_Detail = sequelize.define('Order_Detail', {
         machine_serial_num: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: true
         },
         part_id: {
@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         price: {
           type: DataTypes.FLOAT,
+          allowNull: true
+        },
+        discount: {
+          type: DataTypes.INTEGER,
           allowNull: true
         }
     }, {
