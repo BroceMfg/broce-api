@@ -345,6 +345,42 @@ router.get('/', (req, res) => {
 
 });
 
+// POST /orders/:id/discount - Admin Only
+router.post('/:id/discount', (req, res) => {
+
+  const cb = () => {
+    if (req.body.discount && req.params.id) {
+      models.Order
+        .findOne({
+          where: { id: req.params.id }
+        })
+        .then(foundOrder => {
+          if (foundOrder) {
+            models.Order_Detail
+              .update({
+                discount: req.body.discount
+              }, {
+                where: { OrderId: foundOrder.id }
+              })
+              .then(() => res.json({
+                success: true
+              }))
+              .catch(err => handleDBError(err, res));
+          } else {
+            const message = 'Could not find an order with that id.';
+            return internalServerError(res, message);
+          }
+        })
+        .catch(err => handleDBError(err, res));
+    } else {
+      const message = 'Expected a value for discount, id, but found none.';
+      return internalServerError(res, message);
+    }
+  };
+
+  checkPermissions(req, res, 1, null, cb);
+});
+
 // POST /orders + form (basic auth)
 router.post('/', (req, res) => {
 
