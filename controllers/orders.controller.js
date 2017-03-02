@@ -350,6 +350,8 @@ router.post('/:id/discount', (req, res) => {
 
   const cb = () => {
     if (req.body.discount && req.params.id) {
+      // discount of 0 means remove the discount
+      const discount = req.body.discount !== '0' ? req.body.discount : null;
       models.Order
         .findOne({
           where: { id: req.params.id }
@@ -357,9 +359,7 @@ router.post('/:id/discount', (req, res) => {
         .then(foundOrder => {
           if (foundOrder) {
             models.Order_Detail
-              .update({
-                discount: req.body.discount
-              }, {
+              .update({ discount }, {
                 where: { OrderId: foundOrder.id }
               })
               .then(() => res.json({
