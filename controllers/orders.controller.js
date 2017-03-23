@@ -508,6 +508,55 @@ router.post('/', (req, res) => {
 
 });
 
+// POST /orders/:id/part - Add another part to an existing order - Admin Only
+router.post('/:id/part', (req, res) => {
+  const b = req.body;
+  if (!b.machine_number) return notProvidedError(res, 'machine_number');
+  if (!b.part_number) return notProvidedError(res, 'part_number');
+  if (!b.part_number_quantity) return notProvidedError(res, 'part_number_quantity');
+
+  const cb2 = (orders) => {
+    if (orders && orders[0]) {
+      const order = orders[0];
+      models.Part
+        .find({
+          where: { number: b.part_number }
+        })
+        .then((foundPart) => {
+          const createOrderDet = (partId) => {
+            const newOrderDet = {
+              OrderId: req.params.id,
+              machine_serial_num: b.machine_number,
+              part_id: partId,
+              quantity: b.part_number_quantity
+            };
+            createOrderDetail(res, newOrderDet, orderDetail => res.json({
+              success: true,
+              orderDetail
+            }));
+          }
+          if (foundPart) {
+            createOrderDet(foundPart.id);
+          } else {
+            createPart(res, { number: b.part_number }, createOrderDet);
+          }
+        })
+        .catch((err) => {
+          handleDBError(err, res);
+        });
+    } else {
+      handleDBError(
+        new Error('no order with that id found',
+          'no order with that id found'), res);
+    }
+  }
+
+  const cb = () => getOrders(res, [req.params.id], 'ADMIN', cb2);
+
+  // userRole = 1 means only admin can access
+  checkPermissions(req, res, 1, null, cb);
+});
+
 // GET /orders/quoted - Admin Only
 router.get('/quoted', (req, res) => {
 
