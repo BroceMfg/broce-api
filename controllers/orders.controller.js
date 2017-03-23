@@ -523,6 +523,7 @@ router.post('/:id/part', (req, res) => {
           where: { number: b.part_number }
         })
         .then((foundPart) => {
+          const successCB = () => res.json({ success: true });
           const createOrderDet = (partId) => {
             const newOrderDet = {
               OrderId: req.params.id,
@@ -530,13 +531,42 @@ router.post('/:id/part', (req, res) => {
               part_id: partId,
               quantity: b.part_number_quantity
             };
-            createOrderDetail(res, newOrderDet, orderDetail => res.json({
-              success: true,
-              orderDetail
-            }));
+            createOrderDetail(res, newOrderDet, successCB);
           }
           if (foundPart) {
-            createOrderDet(foundPart.id);
+            // see if this pair of mach_serial_num and part_num
+            // already exists in this order.
+            // if so, we'll just update its quantity
+            models.Order_Detail
+              .find({
+                where: {
+                  OrderId: req.params.id,
+                  machine_serial_num: b.machine_number,
+                  part_id: foundPart.id
+                }
+              })
+              .then((foundOD) => {
+                if (foundOD) {
+                  models.Order_Detail
+                    .update({
+                        quantity: foundOD.quantity
+                          + parseInt(b.part_number_quantity, 10)
+                      }, {
+                      where: {
+                        id: foundOD.id
+                      }
+                    })
+                    .then(successCB)
+                    .catch((err) => {
+                      handleDBError(err, res);
+                    });
+                } else {
+                  createOrderDet(foundPart.id);
+                }
+              })
+              .catch((err) => {
+                handleDBError(err, res);
+              });
           } else {
             createPart(res, { number: b.part_number }, createOrderDet);
           }
