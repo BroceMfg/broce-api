@@ -30,13 +30,13 @@ const PERMISSION_IDS = {
   admin: 1
 };
 
-const STATUS_TYPE_IDS = {
-  quote: 1,
-  priced: 2,
-  ordered: 3,
-  shipped: 4,
-  archived: 5,
-  abandoned: 6
+const STATUS_TYPES = {
+  1: 'quote',
+  2: 'priced',
+  3: 'ordered',
+  4: 'shipped',
+  5: 'archived',
+  6: 'abandoned'
 };
 
 const STATUS_TYPE_IDS_PERMISSIONS = {
@@ -84,7 +84,8 @@ router.get('/', (req, res) => {
                       foundNotifs: foundNotifs.map(n => ({
                         id: n.id,
                         OrderId: n.OrderId,
-                        new: n.new
+                        new: n.new,
+                        status: STATUS_TYPES[n.StatusTypeId]
                       }))
                     });
                   } else {

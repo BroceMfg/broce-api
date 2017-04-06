@@ -185,8 +185,12 @@ const promoteOrderStatus = (req, res, id, statusType) => {
 
         createOrderStatus(res, orderStatus, () => {
           models.Notification
-            .create({
-              OrderId: id
+            .update({
+              StatusTypeId: statusTypeId
+            }, {
+              where: {
+                OrderId: id
+              }
             })
             .then(() => res.json({
               success: true
@@ -261,7 +265,15 @@ const createOrder = (res, order, cb) => {
   models.Order
     .create(order)
     .then((success) => {
-      cb(success.id);
+      models.Notification
+        .create({
+          OrderId: success.id,
+          StatusTypeId: 1
+        })
+        .then(() => cb(success.id))
+        .catch((err) => {
+          handleDBError(err, res);
+        });
     })
     .catch((err) => {
       handleDBError(err, res);

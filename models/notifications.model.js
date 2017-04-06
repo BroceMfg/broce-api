@@ -6,6 +6,10 @@ module.exports = (sequelize, DataTypes) => {
           type: DataTypes.INTEGER,
           allowNull: false
         },
+        StatusTypeId: {
+          type: DataTypes.INTEGER,
+          allowNull: false
+        },
         new: {
           type: DataTypes.BOOLEAN,
           allowNull: true
@@ -14,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       classMethods: {
         associate: (models) => {
           Notification.belongsTo(models.Order);
+          Notification.belongsTo(models.Status_Type);
         }
       }
     }, {

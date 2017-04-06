@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       associate: (models) => {
         // connect to order_status
         Status_Type.hasMany(models.Order_Status);
+        Status_Type.hasOne(models.Notification);
       }
     }
   }, {
