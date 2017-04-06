@@ -186,7 +186,8 @@ const promoteOrderStatus = (req, res, id, statusType) => {
         createOrderStatus(res, orderStatus, () => {
           models.Notification
             .update({
-              StatusTypeId: statusTypeId
+              StatusTypeId: statusTypeId,
+              new: true
             }, {
               where: {
                 OrderId: id
