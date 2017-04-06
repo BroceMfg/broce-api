@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
           Order.hasMany(models.Order_Detail);
           Order.hasMany(models.Order_Status);
           Order.belongsTo(models.User);
+          Order.hasOne(models.Notification);
         }
       }
     }, {

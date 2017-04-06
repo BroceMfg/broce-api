@@ -114,6 +114,7 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
 
 const promoteOrderStatus = (req, res, id, statusType) => {
   let statusTypeId = STATUS_TYPE_IDS[statusType];
+  let userId;
 
   const checkIfPromotionIsAllowed = (cb) => {
     // check if the requested status type promotion is allowed
@@ -183,11 +184,17 @@ const promoteOrderStatus = (req, res, id, statusType) => {
         };
 
         createOrderStatus(res, orderStatus, () => {
-          res.json({
-            success: true
-          });
+          models.Notification
+            .create({
+              OrderId: id
+            })
+            .then(() => res.json({
+              success: true
+            }))
+            .catch((err) => {
+              handleDBError(err, res);
+            });
         });
-
       });
     })
   }
@@ -198,6 +205,7 @@ const promoteOrderStatus = (req, res, id, statusType) => {
         where: { id }
       })
       .then((order) => {
+        userId = order.UserId;
         checkPermissions(req, res, null, order.UserId, cb);
       })
       .catch((err) => {
