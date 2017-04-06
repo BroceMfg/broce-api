@@ -385,6 +385,10 @@ router.post('/:id/discount', (req, res) => {
 router.post('/', (req, res) => {
 
   const cb = () => {
+
+    console.log('POST /orders');
+    console.log(req.body);
+
     // check to make sure all required form fields exist
     if (!req.body.shipping_address) return notProvidedError(res, 'shipping_address');
     if (!req.body.shipping_city) return notProvidedError(res, 'shipping_city');
@@ -421,16 +425,22 @@ router.post('/', (req, res) => {
 
     createOrder(res, newOrder, (orderId) => {
 
-      // req.body.orderDetails will be an array of objects
-      // the objects will be in the form:
-      // {
-      //   machineSerialNum: <>,
-      //   partNum: <>,
-      //   partQty: <>
-      // }
+      // req.body.orderDetails will be a string
+      // will be in the form:
+      // machineSerialNum=212121,partNum=etc54,partQty=3|machineSerialNum=212121,partNum=jht21,partQty=1
+      // where | denotes the split of multiple orderDetails
 
-      JSON.parse(req.body.orderDetails).forEach((orderDetail) => {
+      const orderDetails = req.body.orderDetails.split('|').map((oD) => {
+        const split = oD.split(',');
+        const data = {};
+        split.forEach((s) => {
+          const pair = s.split('=');
+          data[pair[0]] = pair[1];
+        });
+        return data;
+      });
 
+      orderDetails.every((orderDetail) => {
         const number = orderDetail.partNum;
         models.Part
           .find({
@@ -446,40 +456,33 @@ router.post('/', (req, res) => {
             };
             if (!foundPart) {
               createPart(res, part, (part_id) => {
-
                 createOrderDetail(res, Object.assign(
                   newOrderDetail,
                   {
                     part_id,
                     OrderId: orderId
                   }
-                ), () => cb3(orderId));
-
+                ), () => {});
               });
             } else {
-
               createOrderDetail(res, Object.assign(
                 newOrderDetail,
                 {
                   part_id: foundPart.id,
                   OrderId: orderId
                 }
-              ), () => cb3(orderId));
-
+              ), () => {});
             }
           })
           .catch((err) => {
             handleDBError(err, res)
-          })
-
-        
-      })
-
+          });
+      });
+      return cb3(orderId);
     });
   }
 
   const cb3 = (orderId) => {
-
     models.Status_Type
       .find({
         where: { status: req.body.status || 'quote' }
