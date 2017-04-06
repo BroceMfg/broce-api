@@ -136,20 +136,34 @@ router.post('/seen/:orderId', (req, res) => {
                 if (STATUS_TYPE_IDS_PERMISSIONS[isAdmin ? 'admin' : 'client']
                   .includes(foundOrderStatus.StatusTypeId)
                 ) {
-                  models.Notification
-                    .update({
-                      new: false
-                    }, {
-                      where: {
-                        OrderId: req.params.orderId
-                      }
-                    })
-                    .then(() => res.json({
-                      success: true
-                    }))
-                    .catch((err) => {
-                      handleDBError(err, res);
-                    })
+                  const cb = () => res.json({
+                    success: true
+                  });
+                  if (foundOrderStatus.StatusTypeId > 3) {
+                    models.Notification
+                      .destroy({
+                        where: {
+                          OrderId: req.params.orderId
+                        }
+                      })
+                      .then(cb)
+                      .catch((err) => {
+                        handleDBError(err, res);
+                      })
+                  } else {
+                    models.Notification
+                      .update({
+                        new: false
+                      }, {
+                        where: {
+                          OrderId: req.params.orderId
+                        }
+                      })
+                      .then(cb)
+                      .catch((err) => {
+                        handleDBError(err, res);
+                      })
+                  }
                 } else {
                   return permissionDenied(res);
                 }

@@ -461,7 +461,9 @@ router.post('/', (req, res) => {
         return data;
       });
 
-      orderDetails.every((orderDetail) => {
+      console.log(orderDetails);
+
+      orderDetails.forEach((orderDetail) => {
         const number = orderDetail.partNum;
         models.Part
           .find({
