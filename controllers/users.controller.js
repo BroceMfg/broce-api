@@ -18,7 +18,7 @@ router.post('/login', (req, res) => {
     .then((user) => {
 
       if (!user)
-        return notProvidedError(res, null, 
+        return notProvidedError(res, null,
           'error: a user with that email does not exist');
 
       if (!models.User.validPassword(req.body.password, user.dataValues.password))
@@ -141,6 +141,25 @@ router.post('/', (req, res) => {
 
 });
 
+
+// GET /users/addresses - get a user's stored address(es)
+router.get('/addresses', (req, res) => {
+  const cb = () => {
+    models.Shipping_Address
+      .findAll({
+        where: { UserId: req.session.user.id  }
+      })
+      .then(addresses => res.json({
+        addresses
+      }))
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+  };
+
+  checkPermissions(req, res, 0, null, cb);
+});
+
 // GET /users/{id} - only the user or admin can access
 router.get('/:id', (req, res) => {
 
@@ -184,7 +203,7 @@ router.put('/:id', (req, res) => {
 
         const b = req.body;
 
-        // only allows for updating the first_name, last_name, email, 
+        // only allows for updating the first_name, last_name, email,
         // and password fields
         const userObj = {
           first_name: b.first_name || user.first_name,
