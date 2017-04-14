@@ -147,10 +147,21 @@ router.get('/addresses', (req, res) => {
   const cb = () => {
     models.Shipping_Address
       .findAll({
-        where: { UserId: req.session.user.id  }
+        where: { UserId: req.session.user.id }
       })
       .then(addresses => res.json({
-        addresses
+        addresses: addresses
+          .map(addr => (
+            {
+              street: addr.street,
+              po_number: addr.po_number === 'null'
+                ? undefined
+                : addr.po_number,
+              city: addr.city,
+              state: addr.state,
+              zip: addr.zip
+            }
+          ))
       }))
       .catch((err) => {
         handleDBError(err, res);
