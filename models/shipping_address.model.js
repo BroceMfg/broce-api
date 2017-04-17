@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     zip: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: true
     },
     po_number: {
