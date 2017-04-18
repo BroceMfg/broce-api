@@ -45,7 +45,7 @@ const STATUS_TYPE_IDS_PERMISSIONS = {
   2: 'admin',
   3: 'client',
   4: 'admin',
-  5: 'admin',
+  5: 'admin,client',
   6: 'client'
 };
 
@@ -226,7 +226,11 @@ const promoteOrderStatus = (req, res, id, statusType) => {
       checkOrderIdPermissions(() => {
         // NOTE: admin users can also do things as a "client" here
         // this is because checkPermissions will grant client access to clients or admins
-        checkPermissions(req, res, PERMISSION_IDS[permissionRole], null, cb);
+        let pRoles;
+        if (permissionRole.includes(',')) {
+          pRoles = permissionRole.split(',').map(r => PERMISSION_IDS[r]);
+        }
+        checkPermissions(req, res, pRoles || PERMISSION_IDS[permissionRole], null, cb);
       });
 
     } else {
