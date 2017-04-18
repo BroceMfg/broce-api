@@ -925,6 +925,20 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
     if (!req.body.city) return notProvidedError(res, 'city');
     if (!req.body.state) return notProvidedError(res, 'state');
 
+    const {
+      street,
+      city,
+      state,
+      zip,
+      po_number
+    } = req.body;
+    const UserId = req.session.user.id;
+    console.log(street);
+    console.log(city);
+    console.log(state);
+    console.log(zip);
+    console.log(po_number);
+
     const address = {
       street: req.body.street,
       city: req.body.city,
@@ -934,7 +948,29 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       UserId: req.session.user.id
     };
 
-    createShippingAddress(res, address, cb2);
+    const where = {
+      street,
+      city,
+      state,
+      zip,
+      // po_number,
+      // UserId
+    };
+
+    models.Shipping_Address
+      .findOne({ where })
+      .then(foundShipAddr => {
+        console.log('got here');
+        console.log(foundShipAddr);
+        if (foundShipAddr) {
+          cb2(foundShipAddr.id);
+        } else {
+          createShippingAddress(res, address, cb2);
+        }
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
   }
 
   models.Order_Detail
