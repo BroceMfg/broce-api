@@ -103,7 +103,7 @@ const getOrderIdsForOrderStatusType = (res, orderStatusTypeId, cb) => {
       const ids = results.map((result) => {
         return result.OrderId;
       });
-      
+
       cb(ids);
 
     })
@@ -411,16 +411,11 @@ router.post('/', (req, res) => {
     console.log(req.body);
 
     // check to make sure all required form fields exist
-    if (!req.body.shipping_address) return notProvidedError(res, 'shipping_address');
-    if (!req.body.shipping_city) return notProvidedError(res, 'shipping_city');
-    if (!req.body.shipping_state) return notProvidedError(res, 'shipping_state');
-    if (!req.body.shipping_zip) return notProvidedError(res, 'shipping_zip');
-    if (!req.body.po_number) return notProvidedError(res, 'po_number');
     if (!req.body.orderDetails) return notProvidedError(res, 'orderDetails');
 
     // get current user's id
-    const userId = process.env.NODE_ENV === 'test' ? 
-      require('./helpers/checkPermissions/getUserId.test')(req) : 
+    const userId = process.env.NODE_ENV === 'test' ?
+      require('./helpers/checkPermissions/getUserId.test')(req) :
       normalizeNumberString(req.session.user.id);
 
     // make sure it's a valid userId
@@ -435,14 +430,7 @@ router.post('/', (req, res) => {
   }
 
   const cb2 = (userId) => {
-    const newOrder = {
-      shipping_address: req.body.shipping_address,
-      shipping_city: req.body.shipping_city,
-      shipping_state: req.body.shipping_state,
-      shipping_zip:req.body.shipping_zip,
-      po_number: req.body.po_number,
-      UserId: userId
-    };
+  const newOrder = { UserId: userId };
 
     createOrder(res, newOrder, (orderId) => {
 
@@ -733,6 +721,12 @@ router.get('/:id', (req, res) => {
 
 // PUT /orders/{id} -- Owner or Admin Only
 router.put('/:id', (req, res) => {
+  const b = req.body;
+  if (!b.shipping_address) return notProvidedError(res, 'shipping_address');
+  if (!b.shipping_city) return notProvidedError(res, 'shipping_city');
+  if (!b.shipping_state) return notProvidedError(res, 'shipping_state');
+  if (!b.shipping_zip) return notProvidedError(res, 'shipping_zip');
+  if (!b.po_number) return notProvidedError(res, 'po_number');
 
   if (req.params == undefined || req.params.id == undefined)
     return notProvidedError(res, 'id');
@@ -742,14 +736,14 @@ router.put('/:id', (req, res) => {
 
     const b = req.body;
 
-    // only allows for updating the shipping_address, shipping_city, shipping_state, 
+    // only allows for updating the shipping_address, shipping_city, shipping_state,
     // shipping_zip, and po_number fields
     const orderObj = {
-      shipping_address: b.shipping_address || order.shipping_address,
-      shipping_city: b.shipping_city || order.shipping_city,
-      shipping_state: b.shipping_state || order.shipping_state,
-      shipping_zip: b.shipping_zip || order.shipping_zip,
-      po_number: b.po_number || order.po_number
+      shipping_address: b.shipping_address,
+      shipping_city: b.shipping_city,
+      shipping_state: b.shipping_state,
+      shipping_zip: b.shipping_zip,
+      po_number: b.po_number,
     };
 
     models.Order
@@ -876,7 +870,7 @@ router.put('/details/:detailIds', (req, res) => {
       .forEach((key) => {
         detailObj[key] = b[key];
       });
-    
+
     const detailIds = req.params.detailIds.split(',');
 
     models.Order_Detail
@@ -930,17 +924,49 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
     if (!req.body.street) return notProvidedError(res, 'street');
     if (!req.body.city) return notProvidedError(res, 'city');
     if (!req.body.state) return notProvidedError(res, 'state');
+    if (!req.body.zip) return notProvidedError(res, 'zip');
+
+    const {
+      street,
+      city,
+      state,
+      zip,
+      po_number
+    } = req.body;
+    const UserId = req.session.user.id;
 
     const address = {
       street: req.body.street,
       city: req.body.city,
       state: req.body.state,
-      zip: req.body.zip || null,
-      po_number: req.body.po_number || null,
+      zip: req.body.zip,
+      po_number: req.body.po_number,
       UserId: req.session.user.id
     };
 
-    createShippingAddress(res, address, cb2);
+    const where = {
+      street,
+      city,
+      state,
+      zip,
+      po_number: po_number || null,
+      UserId
+    };
+
+    models.Shipping_Address
+      .findOne({ where })
+      .then(foundShipAddr => {
+        console.log('got here');
+        console.log(foundShipAddr);
+        if (foundShipAddr) {
+          cb2(foundShipAddr.id);
+        } else {
+          createShippingAddress(res, address, cb2);
+        }
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
   }
 
   models.Order_Detail
@@ -975,8 +1001,8 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
         // i.e. orderDetails that map to multiple userIds
         internalServerError(res);
       } else {
-        // successfully found a userId, now check if the current 
-        // user is authorized to do this under the found userId 
+        // successfully found a userId, now check if the current
+        // user is authorized to do this under the found userId
         checkPermissions(req, res, null, userIds[0], cb);
       }
     })
