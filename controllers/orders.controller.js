@@ -943,8 +943,8 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       street: req.body.street,
       city: req.body.city,
       state: req.body.state,
-      zip: req.body.zip || null,
-      po_number: req.body.po_number || null,
+      zip: req.body.zip,
+      po_number: req.body.po_number,
       UserId: req.session.user.id
     };
 
@@ -953,8 +953,8 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       city,
       state,
       zip,
-      // po_number,
-      // UserId
+      po_number: po_number || null,
+      UserId
     };
 
     models.Shipping_Address
