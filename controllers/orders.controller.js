@@ -924,6 +924,7 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
     if (!req.body.street) return notProvidedError(res, 'street');
     if (!req.body.city) return notProvidedError(res, 'city');
     if (!req.body.state) return notProvidedError(res, 'state');
+    if (!req.body.zip) return notProvidedError(res, 'zip');
 
     const {
       street,
@@ -933,11 +934,6 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
       po_number
     } = req.body;
     const UserId = req.session.user.id;
-    console.log(street);
-    console.log(city);
-    console.log(state);
-    console.log(zip);
-    console.log(po_number);
 
     const address = {
       street: req.body.street,
