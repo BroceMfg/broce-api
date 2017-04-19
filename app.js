@@ -14,7 +14,7 @@ const app = express();
 const RedisStore = redis(session);
 
 const redisOptions = {
-  tll: 14400, // 4 hours
+  tll: 60 * 60 * 24, // 24 hours
 };
 
 let sess = {
@@ -23,8 +23,8 @@ let sess = {
   resave: false,
   unset: 'destroy',
   cookie: {
-    expires: new Date(Date.now() + 3600000), // expires in one hour
-    maxAge: 3600000
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // expires in 24 hours
+    maxAge: 1000 * 60 * 60 * 24 // 24 hours
   },
   saveUninitialized: true
 };
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
   if (!req.session) {
     return next(new Error('connection to redis lost')); // handle error
   }
-  next(); // otherwise continue 
+  next(); // otherwise continue
 });
 
 if (process.env.NODE_ENV === 'test') app.use(cookieParser(process.env.COOKIE_SECRET));
@@ -52,7 +52,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 const corsOptions = {
   origin: process.env.CLIENT_ORIGIN,
   credentials: true,
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204 
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 app.use(cors(corsOptions));
 
