@@ -1015,4 +1015,57 @@ router.post('/details/:detailIds/shippingaddress', (req, res) => {
     });
 });
 
+// POST /orders/details/:detailIds/split
+router.post('/:id/details/:detailIds/split', (req, res) => {
+  const cb = () => {
+    models.Order
+      .findOne({
+        where: { id: req.params.id  }
+      })
+      .then((foundOrder) => {
+        if (foundOrder) {
+          const order = {
+            UserId: foundOrder.UserId
+          };
+          createOrder(res, order, (createdOrderId) => {
+            if (createdOrderId) {
+              const orderStatus = {
+                current: true,
+                StatusTypeId: 1,
+                OrderId: createdOrderId
+              };
+              createOrderStatus(res, orderStatus, () => {
+                models.Order_Detail
+                  .update({
+                    OrderId: createdOrderId
+                  }, {
+                    where: {
+                      id: {
+                        $in: req.params.detailIds.split(',')
+                          .map(d => parseInt(d, 10))
+                      }
+                    }
+                  })
+                  .then(() => res.json({ success: true }))
+                  .catch((err) => {
+                    handleDBError(err, res);
+                  });
+              })
+            } else {
+              handleDBError(new Error('error creating new order',
+                'Encountered an error when attempting to create a new order'), res);
+            }
+          });
+        } else {
+          handleDBError(new Error('no order found',
+            `No order found with id ${req.params.id}`), res);
+        }
+      })
+      .catch((err) => {
+        handleDBError(err, res);
+      });
+  }
+  checkPermissions(req, res, 1, null, cb);
+});
+
 module.exports = router;
