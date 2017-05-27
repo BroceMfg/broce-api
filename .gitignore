@@ -1,0 +1,10 @@
+.DS_Store
+node_modules
+credentials.js
+npm-debug.log
+
+# vim swap files
+*.swp
+
+# environment params
+.env
