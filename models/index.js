@@ -5,26 +5,49 @@ var path = require('path');
 var Sequelize = require('sequelize');
 
 // use test db if we're testing
-console.log(`process.env.NODE_ENV = ${process.env.NODE_ENV}`);
-if (process.env.NODE_ENV == 'test') process.env.POSTGRESQL_LOCAL_DB='broce_parts_test';
+// console.log(`process.env.NODE_ENV = ${process.env.NODE_ENV}`);
+// if (process.env.NODE_ENV == 'test') process.env.POSTGRESQL_LOCAL_DB='broce_parts_test';
 
-var sequelize = new Sequelize(process.env.POSTGRESQL_LOCAL_DB, '', '', {
-  host: process.env.POSTGRESQL_LOCAL_HOST,
-  dialect: 'postgres',
-  dialectOptions: {
-    ssl: false
-  },
-  define: {
-    timestamps: true
-  },
-  freezeTableName: true,
-  pool: {
-    max: 9,
-    min: 0,
-    idle: 10000
-  },
-  logging: process.env.NODE_ENV == 'dev'
-});
+const sequelize = new Sequelize(
+  process.env.EL_DB_USER,
+  process.env.EL_DB_USER,
+  process.env.EL_DB_PASS,
+  {
+    host: process.env.EL_DB_HOST,
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: false
+    },
+    define: {
+      timestamps: true
+    },
+    freezeTableName: true,
+    pool: {
+      max: 3,
+      min: 0,
+      idle: 10000
+    },
+    logging: process.env.NODE_ENV !== 'production' ? console.log() : null
+  }
+);
+
+// var sequelize = new Sequelize(process.env.POSTGRESQL_LOCAL_DB, '', '', {
+  // host: process.env.POSTGRESQL_LOCAL_HOST,
+  // dialect: 'postgres',
+  // dialectOptions: {
+    // ssl: false
+  // },
+  // define: {
+    // timestamps: true
+  // },
+  // freezeTableName: true,
+  // pool: {
+    // max: 9,
+    // min: 0,
+    // idle: 10000
+  // },
+  // logging: process.env.NODE_ENV == 'dev'
+// });
 
 var db = {};
 
