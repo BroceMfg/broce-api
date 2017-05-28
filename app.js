@@ -24,7 +24,8 @@ let sess = {
   unset: 'destroy',
   cookie: {
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // expires in 24 hours
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    secure: true,
   },
   saveUninitialized: true
 };
@@ -50,7 +51,8 @@ app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 const corsOptions = {
-  origin: process.env.CLIENT_ORIGIN,
+  // origin: process.env.CLIENT_ORIGIN,
+  origin: [process.env.CLIENT_ORIGIN, 'http://localhost:3000', '73.249.91.107'],
   credentials: true,
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
